@@ -13,6 +13,7 @@ Compiles with gcc-5 (on Linux) and clang-700 (on Mac). Assumes preinstalled Gmp 
 * `make` to build dependencies (Z3 and LLVM)
 * `make` to build mufolder
 
+If the build of Z3 and LLVM fails in the second step, try using g++-5 as c++ compiler.
 The binary of mufolder can be found in `build/tools/mu/`.
 
 Benchmarks

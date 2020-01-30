@@ -46,16 +46,20 @@ namespace ufo
 
   template<typename Range> static bool emptyIntersect(Expr a, Range& bv){
     ExprVector av;
+    // This does not take into account bound variables, i.e.,
+    // emptyIntersect((exists x.P(x)), {x}) = false?
     filter (a, bind::IsConst (), inserter(av, av.begin()));
     return emptyIntersect(av, bv);
   }
 
+  bool debug = false;
   inline static bool emptyIntersect(Expr a, Expr b){
     ExprVector bv;
     filter (b, bind::IsConst (), inserter(bv, bv.begin()));
     return emptyIntersect(a, bv);
   }
 
+  typedef std::vector<ExprPair> ExprEqs;
   // if at the end disjs is empty, then a == true
   inline static void getConj (Expr a, ExprSet &conjs)
   {
@@ -636,6 +640,115 @@ namespace ufo
         ps.insert(mk<OR>(a, b));
   }
 
+      inline static string varType (Expr var)
+    {
+      if (bind::isIntConst(var))
+      return "Int";
+      else if (bind::isRealConst(var))
+      return "Real";
+      else if (bind::isBoolConst(var))
+      return "Bool";
+      else if (bind::isConst<ARRAY_TY> (var))
+      return "(Array Int Int)";
+      else return "";
+    }
+
+      void myprintf(string s)
+    {
+      if(debug) 
+      printf("%s", s.c_str());
+    }
+
+    static void print (Expr e)
+    {
+      if(debug){
+      EZ3 z3(e->getFactory());
+      if (isOpX<FORALL>(e) || isOpX<EXISTS>(e))
+      {
+        if (isOpX<FORALL>(e)) outs () << "(forall (";
+        else outs () << "(exists (";
+
+        for (int i = 0; i < e->arity() - 1; i++)
+        {
+          Expr var = bind::fapp(e->arg(i));
+          outs () << "(" << *var << " " << varType(var) << ") ";
+        }
+        outs () << "\b) ";
+        print (e->last());
+        outs () << ")";
+      }
+      else if (isOpX<AND>(e))
+      {
+        outs () << "(and ";
+        ExprSet cnjs;
+        getConj(e, cnjs);
+        for (auto & c : cnjs)
+        {
+          print(c);
+          outs () << " ";
+        }
+        outs () << "\b)";
+      }
+      else if (isOpX<OR>(e))
+      {
+        outs () << "(or ";
+        ExprSet dsjs;
+        getDisj(e, dsjs);
+        for (auto & d : dsjs)
+        {
+          print(d);
+          outs () << " ";
+        }
+        outs () << "\b)";
+      }
+      else if (isOpX<IMPL>(e) || isOp<ComparissonOp>(e))
+      {
+        if (isOpX<IMPL>(e)) outs () << "(=> ";
+        if (isOpX<EQ>(e)) outs () << "(= ";
+        if (isOpX<GEQ>(e)) outs () << "(>= ";
+        if (isOpX<LEQ>(e)) outs () << "(<= ";
+        if (isOpX<LT>(e)) outs () << "(< ";
+        if (isOpX<GT>(e)) outs () << "(> ";
+        if (isOpX<NEQ>(e)) outs () << "(distinct ";
+        print(e->left());
+        outs () << " ";
+        print(e->right());
+        outs () << ")";
+      }
+      else if (isOpX<ITE>(e))
+      {
+        outs () << "(ite ";
+        print(e->left());
+        outs () << " ";
+        print(e->right());
+        outs () << " ";
+        print(e->last());
+        outs () << ")";
+      }
+      else outs () << z3.toSmtLib (e);
+      }
+    }
+    static void printvec (ExprVector es)
+    {
+      if(debug){
+      for(auto it = es.begin(); it!=es.end(); ++it){
+	Expr tmp = *it;
+	print(tmp);
+	printf("\n");
+      }
+      }
+    }
+    static void printset (ExprSet es)
+    {
+      if(debug){
+      for(auto it = es.begin(); it!=es.end(); ++it){
+	Expr tmp = *it;
+	print(tmp);
+	printf("\n");
+      }
+      }
+    }
+
   static Expr simplifyBool (Expr exp);
 
   // (a \/ b) /\ (c \/ d \/ e) /\ f =>
@@ -666,7 +779,9 @@ namespace ufo
       expandConjHlp(cdisj[i], older, newer);
       older = newer;
     }
-
+    Expr tmp = disjoin (newer, exp->getFactory());
+    myprintf("expandConj\n");
+    print(tmp);
     return simplifyBool(disjoin (newer, exp->getFactory()));
   }
 
@@ -856,7 +971,7 @@ namespace ufo
     {
       zero = mkTerm (mpz_class (0), efac);
       one = mkTerm (mpz_class (1), efac);
-      minus_one = mkTerm (mpz_class (1), efac);
+      minus_one = mkTerm (mpz_class (-1), efac);
     };
 
     Expr operator() (Expr exp)
@@ -881,24 +996,32 @@ namespace ufo
         if (exp->right() == minus_one) return mk<UN_MINUS>(exp->left());
       }
 
+      if (isOpX<MINUS>(exp))
+      {
+        if (isOpX<UN_MINUS>(exp->right())) return mk<PLUS>(exp->left(), exp->right()->left());
+	if (exp->right() ==zero) return exp->left();
+	if (exp->left() ==zero) exp = mk<UN_MINUS>(exp->right());
+      }
+
       if (isOpX<UN_MINUS>(exp))
       {
         Expr uneg = exp->left();
         if (uneg == zero) return zero;
         if (uneg == minus_one) return one;
         if (isOpX<UN_MINUS>(uneg)) return uneg->left();
-        if (isOpX<PLUS>(uneg)){
+        if (isOpX<PLUS>(uneg) && uneg->arity()==2){
           Expr unegl = uneg->left();
           Expr unegr = uneg->right();
           if (isOpX<UN_MINUS>(unegl)) return mk<MINUS>(unegl->left(), unegr);
           if (isOpX<UN_MINUS>(unegr)) return mk<MINUS>(unegr->left(), unegl);
         }
+        if (isOpX<MINUS>(uneg)){
+	  if (isOpX<UN_MINUS>(uneg->left())) {
+	    return mk<PLUS>(uneg->right(),uneg->left()->left());
+	  } else return mk<MINUS>(uneg->right(),uneg->left());
+	}
       }
 
-      if (isOpX<MINUS>(exp))
-      {
-        if (isOpX<UN_MINUS>(exp->right())) return mk<PLUS>(exp->left(), exp->right()->left());
-      }
       return exp;
     }
   };
@@ -990,6 +1113,8 @@ namespace ufo
           for (auto & n : newCnjs)
             if (mkNeg(n) == c || mkNeg(c) == n)
               return mk<FALSE>(efac);
+          //if (isOpX<EQ>(c) && c->left() == c->right())
+	  //  continue;
           if (isOpX<FALSE>(c)) return mk<FALSE>(efac);
           if (!isOpX<TRUE>(c)) newCnjs.insert(c);
         }
@@ -1004,7 +1129,165 @@ namespace ufo
     }
   };
 
+  static Expr normalizeArithm (Expr exp);
+  static Expr simplifyArithm (Expr exp);
+
+      void  register_newmap(ExprMap& map, Expr left, Expr right)
+    // map <- [left->right] o map
+    {
+      ExprMap newmap;
+      newmap[left]=right;
+      for (auto & m: map) {
+	if(m.first != NULL && m.second !=NULL)
+	  map[m.first] = normalizeArithm(replaceAll(m.second, newmap));
+      }
+      map[left] = right;
+    }
+
+  ExprPair divide_term(Expr e, ExprVector vars, bool& b)
+    {
+      if (isOpX<PLUS>(e)) {
+	ExprVector args1;
+	ExprVector args2;
+	for(int i=0; i< e->arity(); i++) {
+	  ExprPair ep = divide_term(e->arg(i), vars, b);
+	  args1.push_back(ep.first);
+	  args2.push_back(ep.second);
+	}
+	return make_pair(mknary<PLUS>(args1.begin(), args1.end()),
+			 mknary<PLUS>(args2.begin(), args2.end()));
+      } else if (isOpX<MINUS>(e)) {
+	ExprPair e1 = divide_term(e->arg(0), vars, b);
+	ExprPair e2 = divide_term(e->arg(1), vars, b);
+	return make_pair(mk<MINUS>(e1.first, e2.first), mk<MINUS>(e1.second, e2.second));
+      } else if (isOpX<UN_MINUS>(e)) {
+	ExprPair e1 = divide_term(e->arg(0), vars, b);
+	return make_pair(mk<UN_MINUS>(e1.first), mk<UN_MINUS>(e1.second));
+      } else if (isOpX<MULT>(e) && isOpX<MPZ>(e->arg(0))) {
+	ExprPair e2 = divide_term(e->arg(1), vars, b);
+	return make_pair(mk<MULT>(e->arg(0), e2.first), mk<MULT>(e->arg(0), e2.second));
+      } else if (isOpX<MPZ>(e)) {
+	return make_pair(mkTerm (mpz_class (0), e->getFactory()),e);
+      } else if (bind::isIntVar(e)) {
+	return make_pair(e, mkTerm (mpz_class (0), e->getFactory()));
+      } else if (bind::isIntConst(e)) {
+	if (find(vars.begin(), vars.end(), e) == vars.end()) {
+	  return make_pair(mkTerm (mpz_class (0), e->getFactory()), e);
+	} else 	  return make_pair(e, mkTerm (mpz_class (0), e->getFactory()));
+      } else {
+	b = false;
+	return make_pair(e,e);
+      }
+    }
+    ExprPair moveterm(ExprPair eq, ExprVector vars, bool& b) {
+      Expr left = eq.first;
+      Expr right = eq.second;
+      b = true;
+      myprintf("moving term\n");
+      print(right);
+      ExprPair epleft = divide_term(left, vars, b);
+      ExprPair epright = divide_term(right,vars, b);
+      print(left);
+      myprintf("-->\n");
+      print(epleft.first);
+      myprintf("\n");
+      print(epleft.second);
+            myprintf("\n");
+            print(right);
+            myprintf("-->\n");
+            print(epright.first);
+            myprintf("\n");
+            print(epright.second);
+            myprintf("\n");
+      if(!b) {
+	return eq;
+      } else {
+        myprintf("terms divided\n");
+	left = simplifyArithm(mk<MINUS>(epleft.first, epright.first));
+	Expr tmp = mk<MINUS>(epright.second, epleft.second);
+		myprintf("simplifying\n");
+		print(tmp);
+		right = simplifyArithm(mk<MINUS>(epright.second, epleft.second));
+		//right = normalizeArithm(mk<MINUS>(epright.second, epleft.second));
+		myprintf("simplified\n");
+		print(right);
+		myprintf("moved\n");
+		print(left);
+		myprintf("=\n");
+		print(right);
+		myprintf("\n");
+        if(isOpX<UN_MINUS>(left)) {
+	  left = left->left();
+	  right = simplifyArithm(mk<UN_MINUS>(right));
+	}
+      }
+      return make_pair(left,right);
+    }
+
+  static bool partially_solve_eqs(ExprEqs& eqs,ExprVector vars, ExprMap& forallMatching)
+    {
+      for(auto it = eqs.begin(); it != eqs.end(); ++it) {
+	bool b = true;
+	ExprPair eq = moveterm(*it, vars, b); // x+a = b+y --> x-y = b-a
+	if(b) {
+	  *it = eq;
+	} else return false; // failed to move terms
+      }
+      // find equations of the form x=e, and register them in forallMatching
+      for(auto it = eqs.begin(); it != eqs.end(); ) {
+	Expr left = it->first;
+	Expr right = it->second;
+	if(bind::isIntConst(left)
+	   &&(forallMatching.find(left)!=forallMatching.end())
+	   && forallMatching[left]!=NULL) {
+	    it = eqs.erase(it);
+	    forallMatching[left] = right;
+	} else ++it;
+      };
+      // try to solve the remaining equations (of the form a(x1,..xk) = e)
+      //ExprMap tmpmap=forallMatching;
+      bool b=true;
+      for(auto it = eqs.begin(); it != eqs.end(); ){
+	Expr left = replaceAll(it->first, forallMatching);
+	Expr right = it->second;
+	ExprPair ep = moveterm(make_pair(left,right), vars, b);
+	left = normalizeArithm(ep.first);
+	right = ep.second;
+        ExprVector av;
+        filter (left, bind::IsConst (), inserter(av, av.begin()));
+	if(av.empty()) { // there are no variables that can be instantiated; so the equation must be true
+	  ++it; 
+	} else {
+	  Expr x = av[0]; // pick a variable
+	  //myprintf("picked the variable\n");
+	  //myprint(x);
+	  av.erase(av.begin()+1, av.end());
+	  ExprPair neweq = moveterm(make_pair(left,right), av, b);
+	  if(!b) {
+	    ++it;
+	  } else if(bind::isIntConst(neweq.first)) {
+	    Expr tmp1 = neweq.first;
+	    Expr tmp2 = normalizeArithm(neweq.second);
+	    it = eqs.erase(it);
+	    register_newmap(forallMatching, tmp1, tmp2);
+	  } else ++it;
+	}
+      };
+      //printf("solution:\n");
+      //for(auto &m : forallMatching){
+      //if (m.first!=NULL && m.second != NULL) {
+      //	Expr tmp1 = m.first;
+      //Expr tmp2 = m.second;
+      //print(tmp1);
+      //printf("-->\n");
+      //print(tmp2);
+      //}
+      //}
+      return true;
+    }
+
   static Expr simplifyExists (Expr exp);
+  static Expr swapExists (Expr exp);
 
   struct SimplifyExists
   {
@@ -1040,25 +1323,43 @@ namespace ufo
         // simplify first
         ExprSet cnj;
         getConj(qFree, cnj);
+	ExprEqs eqs;
         for (auto & c : cnj)
         {
-          if (isOpX<EQ>(c))
-          {
-            if (find (args.begin(), args.end(), c->right()) == args.end() &&
-                find (args.begin(), args.end(), c->left()) != args.end())
-              qFree = replaceAll(qFree, c->left(), c->right());
-            if (find (args.begin(), args.end(), c->left()) == args.end() &&
-                find (args.begin(), args.end(), c->right()) != args.end())
-              qFree = replaceAll(qFree, c->right(), c->left());
-          }
-        }
+          if (isOpX<EQ>(c)) {
+	    eqs.push_back(make_pair(c->left(), c->right()));
+	  }
+	  //  printf("equation found\n");
+	  //  print(c);
+          //  if (//find (args.begin(), args.end(), c->right()) == args.end() &&
+	  //    find (args.begin(), args.end(), c->left()) != args.end())
+	  //  { qFree = replaceAll(qFree, c->left(), c->right());
+	  //	printf("found existential variable on left\n");
+	  //	print(qFree);
+	  //  }
+	  //if (//find (args.begin(), args.end(), c->left()) == args.end() &&
+	  //    find (args.begin(), args.end(), c->right()) != args.end())
+	  //  { qFree = replaceAll(qFree, c->right(), c->left());
+	  //	printf("found existential variable on right\n");
+	  //  }
+	}
+	ExprMap subst;
+	bool b = partially_solve_eqs(eqs, args, subst);
+	myprintf("solved\n");
+	print(qFree);
+	qFree = normalizeArithm(replaceAll(qFree, subst));
+	myprintf("after substitution\n");
+	print(qFree);
         qFree = simplifyBool(qFree);
+	myprintf("after simplifyBool\n");
+	print(qFree);
 
         if (isOpX<TRUE>(qFree)) return qFree;
 
         // find a subset of conjuncts independent on quantifiers
         cnj.clear();
         getConj(qFree, cnj);
+	//print(qFree);
         ExprSet depCnj;
         ExprSet indepCnj;
 
@@ -1066,10 +1367,15 @@ namespace ufo
           if (emptyIntersect(c, args)) indepCnj.insert(c);
           else depCnj.insert(c);
 
-        if (indepCnj.empty()) return exp;
+        if (indepCnj.empty()) {
+	  return normalizeArithm(replaceAll(exp, exp->last(), conjoin(depCnj, efac)));
+	  //return exp;
+	}
 
-        indepCnj.insert(simplifyExists(replaceAll(exp, exp->last(), conjoin(depCnj, efac))));
-        return conjoin (indepCnj, efac);
+	Expr tmp = replaceAll(exp, exp->last(), conjoin(depCnj, efac));
+	
+        indepCnj.insert(simplifyExists(swapExists(tmp)));
+        return normalizeArithm(conjoin (indepCnj, efac));
       }
       return exp;
     }
@@ -1266,7 +1572,6 @@ namespace ufo
     return exp;
   }
 
-  static Expr normalizeArithm (Expr exp);
 
   inline static bool findMatching(Expr pattern, Expr exp, ExprVector& vars, ExprMap& matching)
   {
@@ -1500,12 +1805,125 @@ namespace ufo
     }
   }
 
+  
+  typedef std::map<Expr,int> ExprLin;
+
+  void add_lform(ExprVector vars, ExprLin lform1, ExprLin& lform) {
+    for(auto it = vars.begin(); it!=vars.end(); ++it) {
+      lform[*it] = lform[*it]+lform1[*it];
+    }
+  }
+
+  void sub_lform(ExprVector vars, ExprLin lform1, ExprLin& lform) {
+    for(auto it = vars.begin(); it!=vars.end(); ++it) {
+      lform[*it] = lform[*it]-lform1[*it];
+    }
+  }
+
+  void mult_lform(ExprVector vars, int c, ExprLin& lform) {
+    for(auto it = vars.begin(); it!=vars.end(); ++it) {
+      lform[*it] = c * lform[*it];
+    }
+  }
+  void getLinearform(Expr term, ExprVector vars, ExprLin& lform, int& c, bool& succ) {
+    if(isOpX<MPZ>(term)){
+      c = lexical_cast<int>(term);
+    } else if(bind::isIntConst(term)) {
+      lform[term] = 1;
+      c=0;
+    } else if(isOpX<PLUS>(term)) {
+      ExprVector args;
+      getPlusOps(term, args);
+      c=0;
+      for(auto it = args.begin(); it!=args.end(); ++it) {
+	ExprLin lform1;
+	int c1;
+	getLinearform(*it, vars, lform1, c1, succ);
+	if(!succ) return;
+	add_lform(vars, lform1, lform);
+	c = c+c1;
+      }
+    } else if(isOpX<MINUS>(term)){
+      getLinearform(term->left(), vars, lform, c, succ);
+      if(!succ) return;
+      ExprLin lform1;
+      int c1;
+      getLinearform(term->right(), vars, lform1, c1, succ);
+      if(!succ) return;
+      sub_lform(vars, lform1, lform);
+      c = c-c1;
+    } else if(isOpX<UN_MINUS>(term)){
+      getLinearform(term->left(), vars, lform, c, succ);
+      if(!succ) return;
+      mult_lform(vars, -1, lform);
+      c = -c;
+    } else if(isOpX<MULT>(term)){
+      ExprVector vars1;
+      filter (term->left(), bind::IsConst (), inserter(vars1, vars1.begin()));
+      if(vars1.size()>0) {
+	succ=false; return;
+      };
+      int c1;
+      ExprLin lform1;
+      getLinearform(term->left(), vars, lform1, c1, succ);
+      if(!succ) return;
+      getLinearform(term->right(), vars, lform, c, succ);
+      if(!succ) return;
+      mult_lform(vars, c1, lform);
+      c=c*c1;
+    } else { // unknown operator
+      succ=false; return;
+    }
+    succ = true;
+  }
+  static Expr normalizeTerm(Expr term)
+  {
+    //myprintf("normalizing\n");
+    //print(term);
+    //myprintf("\n");
+    ExprVector intVars;
+    filter (term, bind::IsConst (), inserter(intVars, intVars.begin()));
+    std::sort(intVars.begin(), intVars.end());
+    ExprLin lform;
+    bool success;
+    int c;
+    getLinearform(term, intVars, lform, c, success);
+    if(!success) {
+      // give up normalizing terms
+      return term;
+    } else {
+      ExprVector args;
+      for(auto it = intVars.begin(); it!=intVars.end(); ++it) {
+	int c = lform[*it];
+	if(c==0) {
+	    continue;
+	} else if(c==1) {
+	    args.push_back(*it);
+	} else
+	  args.push_back(mk<MULT>(mkTerm(mpz_class(c),term->getFactory()),
+				    *it));
+      }
+      if(args.size()==0) {
+	return mkTerm(mpz_class(c), term->getFactory());
+      } else if (c==0 && args.size()==1) {
+	return args[0];
+      } else {
+	if(c!=0) args.push_back(mkTerm(mpz_class(c), term->getFactory()));
+	return mknary<PLUS>(args);
+      }
+    }
+  }
+  /*
   inline static Expr normalizeTerm(Expr term)
   {
+    myprintf("normalizing\n");
+    print(term);
+    myprintf("\n");
     ExprVector intVars;
     filter (term, bind::IsConst (), inserter(intVars, intVars.begin()));
     ExprVector all;
     getAddTerm(term, all);
+    printvec(all);
     ExprSet newtermPos;
     ExprSet newtermNeg;
     for (auto &v : intVars)
@@ -1578,7 +1996,12 @@ namespace ufo
       else if (coef < 0)
         newtermNeg.insert(mk<MULT>(mkTerm (mpz_class (-coef), term->getFactory()), v));
     }
-
+    myprintf("newtermPos\n");
+    printset(newtermPos);
+    myprintf("newtermNeg\n");
+    printset(newtermNeg);
+    myprintf("rest\n");
+    printvec(all);
     bool success = true;
     int intconst = 0;
 
@@ -1617,7 +2040,7 @@ namespace ufo
       return mk<MINUS>(mkplus(newtermPos, term->getFactory()),
                        mkplus(newtermNeg, term->getFactory()));
   }
-
+  */
   struct NormalizeArithmExpr
   {
     ExprFactory &efac;
@@ -1657,6 +2080,7 @@ namespace ufo
          mk<INT_TY> (new_name->getFactory()))); // GF: currently, only Arrays over Ints
     else return NULL;
   }
+
 }
 
 #endif
