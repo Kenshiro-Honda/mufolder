@@ -30,7 +30,7 @@ namespace ufo
       SMTUtils u;
       bool usedNu;
       int name_id = 0;
-      bool debug = false;
+      bool debug = true;
 
     public:
       MuSolver(ExprFactory& _efac): efac(_efac), u(_efac) {}
@@ -56,15 +56,15 @@ namespace ufo
       filter (a, bind::IsConst (), inserter(av, av.begin()));
 
       ExprMap matching;
-      //    myprintf("rewrite: comparing \n");
-      //	    myprint(a);
-      //	    myprintf("and \n");
-      //	    Expr tmp = fla;
-     //	    myprint(tmp);
+//         myprintf("rewrite: comparing \n");
+//                 myprint(a);
+//                 myprintf("and \n");
+//                 Expr tmp = fla;
+//                myprint(tmp);
       if (findMatchingSubexpr (a, fla, av, matching))
       {
-	//myprintf("matched\n");
-	//print_matching(matching);
+//        myprintf("matched\n");
+//        print_matching(matching);
         Expr toRepl1 = a;
         Expr toRepl2 = b;
         {
@@ -72,7 +72,7 @@ namespace ufo
           toRepl2 = replaceAll(toRepl2, matching);
         }
         fla = replaceAll(fla, toRepl1, toRepl2);
-        //myprint(fla);
+//        myprint(fla);
         return true;
       }
       return false;
@@ -83,17 +83,17 @@ namespace ufo
       Expr binders = recDefsBinders[head];
       Expr tmp = nonrecDefs[head];
       if(tmp!=NULL){
-	return replaceAll(binders, binders->last(), mk<EQ>(head,tmp));
-	//return mk<FORALL>(binders, mk<EQ>(head, tmp2));
+        return replaceAll(binders, binders->last(), mk<EQ>(head,tmp));
+        //return mk<FORALL>(binders, mk<EQ>(head, tmp2));
       } else {
-	tmp = recDefsMu[head];
-	if(tmp!=NULL) {
-  	  return replaceAll(mk<AND>(muVar, binders), binders->last(), mk<EQ>(head,tmp));
-	  //return mk<AND>(muVar, mk<FORALL>(binders, mk<EQ>(head, tmp)));
-	} else {
-  	  return replaceAll(mk<AND>(nuVar, binders), binders->last(), mk<EQ>(head,recDefsNu[head]));
-	  //return mk<AND>(nuVar, mk<FORALL>(binders, mk<EQ>(head, recDefsNu[head])));
-	}
+        tmp = recDefsMu[head];
+        if(tmp!=NULL) {
+            return replaceAll(mk<AND>(muVar, binders), binders->last(), mk<EQ>(head,tmp));
+          //return mk<AND>(muVar, mk<FORALL>(binders, mk<EQ>(head, tmp)));
+        } else {
+            return replaceAll(mk<AND>(nuVar, binders), binders->last(), mk<EQ>(head,recDefsNu[head]));
+          //return mk<AND>(nuVar, mk<FORALL>(binders, mk<EQ>(head, recDefsNu[head])));
+        }
       }
     }
 
@@ -113,25 +113,25 @@ namespace ufo
       // serialize everything:
       // outs () << "(declare-fun mu () Bool)\n(declare-fun nu () Bool)\n";
       for(auto it = fixVars.begin(); it!=fixVars.end(); ++it) {
-	Expr tmp = *it;
-	if (isOpX<FAPP>(tmp)) {
-	  u.print(tmp->arg(0));
-	  //printf("\n");
-	  outs() << " \n";
-	}
+        Expr tmp = *it;
+        if (isOpX<FAPP>(tmp)) {
+          u.print(tmp->arg(0));
+          //printf("\n");
+          outs() << " \n";
+        }
       }
       printf("(declare-fun mu () Bool)\n");
       printf("(declare-fun nu () Bool)\n");
       u.serialize_formula(flaMain);
       //u.serialize_formula(simplifyArithm(fla2));
       for(auto it = fixVars.begin(); it!=fixVars.end(); ++it) {
-	Expr tmp = *it;
-	//myprintf("trying to print the definition for\n");
-	//myprint(tmp);
-	Expr e = get_definition(*it);
-	u.serialize_formula(e);
-	//printf("\n");
-	outs() << "\n";
+        Expr tmp = *it;
+        //myprintf("trying to print the definition for\n");
+        //myprint(tmp);
+        Expr e = get_definition(*it);
+        u.serialize_formula(e);
+        //printf("\n");
+        outs() << "\n";
       }
     }
 
@@ -142,8 +142,8 @@ namespace ufo
     void myprint(Expr & fla)
     {
       if(debug) {
-	u.print(fla);
-	myprintf("\n");
+        u.print(fla);
+        myprintf("\n");
       }
     }
     void print_matching(ExprMap matching)
@@ -151,41 +151,41 @@ namespace ufo
       if(debug) {
         myprintf("matching\n");
       for (auto & m : matching) {
-	if (m.first!=NULL && m.second != NULL) {
-	Expr tmp1 = m.first;
-	Expr tmp2 = m.second;
-	myprint(tmp1);
+        if (m.first!=NULL && m.second != NULL) {
+        Expr tmp1 = m.first;
+        Expr tmp2 = m.second;
+        myprint(tmp1);
         myprintf("-->\n");
-	myprint(tmp2);
-	}
-	//else if (m.first!=NULL) {
-	//Expr tmp1 = m.first;
-	//myprint(tmp1);
+        myprint(tmp2);
+        }
+        //else if (m.first!=NULL) {
+        //Expr tmp1 = m.first;
+        //myprint(tmp1);
         //myprintf("-->null\n");
-	//}
+        //}
       }
       }
     }
     void myprint_eqs(ExprEqs eqs)
     {
       if(debug) {
-	for (auto it = eqs.begin(); it!=eqs.end(); ++it) {
-	Expr tmp1 = it->first;
-	Expr tmp2 = it->second;
-	myprint(tmp1);
+        for (auto it = eqs.begin(); it!=eqs.end(); ++it) {
+        Expr tmp1 = it->first;
+        Expr tmp2 = it->second;
+        myprint(tmp1);
         myprintf("==\n");
-	myprint(tmp2);
-	}
+        myprint(tmp2);
+        }
       }
     }
     void myprint_eq(ExprPair eq)
     {
       if(debug) {
-	Expr tmp1 = eq.first;
-	Expr tmp2 = eq.second;
-	myprint(tmp1);
+        Expr tmp1 = eq.first;
+        Expr tmp2 = eq.second;
+        myprint(tmp1);
         myprintf("==\n");
-	myprint(tmp2);
+        myprint(tmp2);
       }
     }
 
@@ -201,19 +201,19 @@ namespace ufo
     void myprintvec(ExprVector & vars)
     {
       if(debug) {
-	for (auto it = vars.begin(); it != vars.end();++it) {
+        for (auto it = vars.begin(); it != vars.end();++it) {
           Expr tmp = *it;
-	  myprint(tmp);
-	}
+          myprint(tmp);
+        }
       }
     }
     void myprintset(ExprSet & vars)
     {
       if(debug) {
-	for (auto it = vars.begin(); it != vars.end();++it) {
+        for (auto it = vars.begin(); it != vars.end();++it) {
           Expr tmp = *it;
-	  myprint(tmp);
-	}
+          myprint(tmp);
+        }
       }
     }
 
@@ -231,13 +231,13 @@ namespace ufo
       myprintf("updating the definition for\n");
       myprint(head);
       myprint(body);
-	Expr binders = recDefsBinders[head];
-	if (usedNu) {
-	  recDefsNu[head] = body;
-	} else {
-	  recDefsMu[head] = body;
-	}
-	nonrecDefs[head] = NULL;
+        Expr binders = recDefsBinders[head];
+        if (usedNu) {
+          recDefsNu[head] = body;
+        } else {
+          recDefsMu[head] = body;
+        }
+        nonrecDefs[head] = NULL;
     }
 
     void add_definition(Expr head, Expr body, bool nu)
@@ -249,18 +249,18 @@ namespace ufo
       filter(head, bind::IsConst (), inserter(args, args.begin()));
       ExprVector args1;
       for(auto it=args.begin(); it!=args.end(); ++it) {
-	Expr v = *it;
-	Expr type=bind::typeOf(v);
-	args1.push_back(bind::constDecl(v,type));
+        Expr v = *it;
+        Expr type=bind::typeOf(v);
+        args1.push_back(bind::constDecl(v,type));
       }
       args1.push_back(mk<EQ>(head,body));
       Expr forallExp = mknary<FORALL>(args1);
       recDefsBinders[head]=forallExp;
-	if (nu) {
-	  recDefsNu[head] = body;
-	} else {
-	  recDefsMu[head] = body;
-	}
+        if (nu) {
+          recDefsNu[head] = body;
+        } else {
+          recDefsMu[head] = body;
+        }
     }
 
     void initialize(Expr s)
@@ -283,9 +283,9 @@ namespace ufo
           {
             flaForall = c;
             fla = c->last();
-	    fixVars.push_back(c->last()->first());
-	    nonrecDefs[c->last()->left()] = c->last()->right();
-	    recDefsBinders[c->last()->left()] = c;
+            fixVars.push_back(c->last()->first());
+            nonrecDefs[c->last()->left()] = c->last()->right();
+            recDefsBinders[c->last()->left()] = c;
           }
         }
 
@@ -300,12 +300,12 @@ namespace ufo
             Expr def = c->last()->right();
             for (auto & a : recDefsNu)
               if (contains (def, a.first->left())) {
-		printf("Alternations between mu and nu are currently unsupported\n");
-		exit(0);
-	      }
+                printf("Alternations between mu and nu are currently unsupported\n");
+                exit(0);
+              }
             recDefsMu[c->last()->left()] = def;
             recDefsBinders[c->last()->left()] = c;
-	    fixVars.push_back(c->last()->left());
+            fixVars.push_back(c->last()->left());
             muVar = var;
           }
           if (pref == "nu")
@@ -313,12 +313,12 @@ namespace ufo
             Expr def = c->last()->right();
             for (auto & a : recDefsMu)
               if (contains (def, a.first->left())) {
-		printf("Alternations between mu and nu are currently unsupported\n");
-		exit(0);
-	      }
+                printf("Alternations between mu and nu are currently unsupported\n");
+                exit(0);
+              }
             recDefsNu[c->last()->left()] = def;
             recDefsBinders[c->last()->left()] = c;
-	    fixVars.push_back(c->last()->left());
+            fixVars.push_back(c->last()->left());
             nuVar = var;
           }
         }
@@ -494,14 +494,14 @@ namespace ufo
               continue;
             }
             Expr d = normalizeArithm(*it2);
-	    myprintf("comparing \n");
-	    myprint(a);
-	    myprintf("and \n");
-	    myprint(d);
+            myprintf("comparing \n");
+            myprint(a);
+            myprintf("and \n");
+            myprint(d);
             ExprMap matching1;
             if (findMatchingSubexpr (a, d, av, matching1))
             {
-	      myprintf("matching found\n");
+              myprintf("matching found\n");
               int toCont = false;
               for (auto & m : matching1)
               {
@@ -709,13 +709,13 @@ namespace ufo
       ExprMap allRepls;
       for (auto & app : flaApps)
       {
-	//myprintf("trying to unfold\n");
+        // myprintf("trying to unfold\n");
         Expr appRepled = app;
         bool repled = false; // should not allow replacing same app more than once
         for (auto & a : recDefsMu) {
-	  Expr tmp = a.first;
+          Expr tmp = a.first;
           if (!repled) repled = rewrite(a.first, a.second, appRepled);
-	};
+        };
 
         for (auto & a : recDefsNu)
         {
@@ -724,30 +724,304 @@ namespace ufo
         }
         allRepls[app] = appRepled;
       }
-
+      
       e1 = replaceAll(e, allRepls);
       myprintf("unfolded\n");
       myprint(e1);
       return e1;
     }
 
+    Expr flex_unfold(Expr e)
+    {
+      Expr e1;
+      e = normalizeArithm(e);
+      myprintf("flex unfolding\n");
+      myprint(e);
+      ExprSet flaApps;
+      filter (e, bind::IsFApp (), inserter(flaApps, flaApps.begin()));
+      ExprMap allRepls;
+      map<Expr,map<Expr,Expr>> constDiffByItr;
+      
+      // get diffs for defs
+      for (auto & def : recDefsMu) 
+      {
+        ExprVector vars;
+        ExprMap matching;
+        filter (def.first, bind::IsConst(), inserter(vars,vars.begin()));
+        if (findMatchingSubexpr(def.first, def.second, vars, matching))
+        {
+          ExprVector ev;
+
+          for (auto & var : vars)
+          {
+            Expr minusTerm = mk<MINUS>(matching[var], var);
+            Expr normTerm = normalizeArithm(minusTerm);
+            ExprVector tempVec;
+            // myprintf("  var\n  ");
+            // myprint(var);
+            // myprintf("  diff\n");
+            // myprint(norm_term);
+            filter (normTerm, bind::IsConst(), inserter(tempVec,tempVec.begin()));
+            if (tempVec.size() == 0)
+            {
+              // myprintf("empty\n");
+              constDiffByItr[def.first][var] = normTerm;
+            } else {
+              // myprintf("have var\n");
+              constDiffByItr[def.first][var] = mkVar("undef");
+            }
+            // myprintf("  isNumeric\n");
+            // if (isNumeric(norm_term))
+            //   myprintf("  true\n");
+            // else
+            //   myprintf("  false\n");
+            // Expr termtype = bind::typeOf(norm_term);
+            // myprintf("  type\n");
+            // myprint(termtype);
+          }
+
+        }
+        Expr tmp = def.first;
+        myprint(tmp);
+        print_matching(constDiffByItr[def.first]);
+      }
+      for (auto & def : recDefsNu) 
+      {
+        ExprVector vars;
+        ExprMap matching;
+        filter (def.first, bind::IsConst(), inserter(vars,vars.begin()));
+        if (findMatchingSubexpr(def.first, def.second, vars, matching))
+        {
+          ExprVector ev;
+
+          for (auto & var : vars)
+          {
+            Expr minusTerm = mk<MINUS>(matching[var], var);
+            Expr normTerm = normalizeArithm(minusTerm);
+            ExprVector tempVec;
+            filter (normTerm, bind::IsConst(), inserter(tempVec,tempVec.begin()));
+            if (tempVec.size() == 0)
+            {
+              constDiffByItr[def.first][var] = normTerm;
+            } 
+            else 
+            {
+              constDiffByItr[def.first][var] = mkVar("undef");
+            }
+          }
+        }
+        Expr tmp = def.first;
+        myprint(tmp);
+        print_matching(constDiffByItr[def.first]);
+      }
+      //
+      
+      // make equations 
+      ExprEqs eqs;
+      ExprVector eqVars;
+      ExprMap unfoldCount;
+      int i = 0;
+      for (auto & app: flaApps)
+      {
+        bool varflag = false;
+
+        // diff : map<Expr,map<Expr,Expr>>
+        for (auto & diff : constDiffByItr) {
+          ExprVector vars;
+          ExprMap matching;
+          Expr pred = diff.first;
+          filter (pred , bind::IsConst(), inserter(vars,vars.begin()));
+          if (findMatchingSubexpr (pred,app,vars,matching))
+          {
+            myprintf("found matching subexpr\n");
+            print_matching(matching);
+            // diff_by_var : map<Expr,Expr>
+            for (auto & diffByVar : diff.second)
+            {
+              Expr undef = mkVar("undef");
+              Expr idvar = mkVar("v"+to_string(i));
+              unfoldCount[app] = idvar;
+              Expr lhs;
+              ExprVector vars;
+              filter (matching[diffByVar.first], bind::IsConst(), inserter(vars,vars.begin()));
+              ExprMap tempMap;
+              for (auto & var : vars)
+              {
+                tempMap[var] = cloneVar(var, mkTerm<string>(lexical_cast<string>(var)+"_tmp", efac));
+              }
+              lhs = replaceAll(matching[diffByVar.first],tempMap);
+              // Expr lhs = cloneVar(diffByVar.first, mkTerm<string>(lexical_cast<string>(diffByVar.first)+"_tmp", efac));
+              // diffByVar.first ... y
+              // matching[diffByVar.first] ... y+z
+              Expr rhs = (diffByVar.second == undef) 
+                ? (undef)
+                : (mk<PLUS>(mk<MULT>(diffByVar.second,idvar),matching[diffByVar.first]));
+              // Expr eq = mk<EQ>(lhs,rhs);
+              // myprint(eq);
+              if (rhs != undef) 
+              {
+                eqs.push_back(make_pair(lhs,rhs));
+                if (!varflag)
+                {
+                   eqVars.push_back(idvar);
+                   varflag = true;
+                }
+              }
+            }
+          }
+        }
+        ++i;
+      }
+      myprintf("eqVars\n");
+      myprintvec(eqVars);
+      //
+
+      myprintf("eqs\n");
+      myprint_eqs(eqs);
+      // solve eqs
+      //  elim vars
+      ExprVector elimVars;
+      ExprEqs elimRes;
+      ExprMap elimSubs;
+      for (auto & eq : eqs)
+      {
+        filter (eq.first, bind::IsConst(), inserter(elimVars, elimVars.begin()));
+        for (auto & elimVar : elimVars)
+        {
+          if (eq.first == elimVar && elimSubs.count(eq.first) == 0)
+          {
+            elimSubs[eq.first] = eq.second;
+          }
+        }
+//        auto varItr = find_if (elimVars.begin(), elimVars.end(), [=](pair<Expr,Expr> v){ return v.first == eq.first; });
+//        if (varItr != elimVars.end())
+//          elimRes.push_back (make_pair((*varItr).second,eq.second));
+//        else
+//          elimVars.push_back(eq);
+      }
+      for (auto & eq : eqs)
+      {
+        Expr substituted = replaceAll(eq.first, elimSubs);
+        elimRes.push_back(make_pair(substituted,eq.second));
+      }
+      myprintf("elim result\n");
+      myprint_eqs(elimRes);
+      //  simplify
+      ExprVector simpRes;
+      for (auto & eq : elimRes)
+      {
+        simpRes.push_back (mk<EQ> (mkTerm(mpz_class(0), efac), normalizeArithm (mk<MINUS> (eq.first,eq.second))));
+      }
+      myprintf("simp result\n");
+      myprintvec(simpRes);
+
+      //  call solver
+      ExprMap solved;
+      for (auto & eq : simpRes) 
+      {
+        ExprSet vars;
+        filter (eq, bind::IsConst(), inserter(vars,vars.begin()));
+        for (auto & var : vars) {
+          eq = mk<AND>(mk<LT>(mkTerm(mpz_class(0),efac),var), eq);
+        }
+        EZ3 ez3(efac);
+        ZSolver<EZ3> smt(ez3);
+        smt.assertExpr(eq);
+        if(smt.solve()) printf("solved\n");
+        ZSolver<EZ3>::Model m = smt.getModel();
+        for (auto & var : vars)
+        {
+          Expr expr = m.eval(var);
+          solved[var] = expr;
+          myprint(expr);
+        }
+      }
+
+      // unfold
+      Expr unfolded = e;
+      for (auto & app : flaApps)
+      {
+        ExprMap repls;
+        Expr appRepled = app;
+        if (unfoldCount.count(app) != 0 && solved.count(unfoldCount[app]) != 0 )
+        {
+          Expr appItr = app;
+          EZ3 ez3(efac);
+          int count;
+          std::string countStr = ez3.toSmtLib(solved[unfoldCount[app]]);
+          try 
+          {
+            count = std::stoi(countStr);
+          }
+          catch (...)
+          {
+            std::cout << countStr;
+            printf("caught\n");
+            count = 0;
+          }
+          for (int i = 0; i < count; i++)
+          {
+            repls[appItr] = unfold(appItr);
+            appItr = repls[appItr];
+            /*
+            appRepled = appItr;
+            bool repled = false;
+            // myprint(appRepled);
+            // if (unfoldCount.count(app) != 0 && solved.count(unfoldCount[app]) != 0 )
+            // {
+            //   myprint(unfoldCount[app]);
+            //   myprint(solved[unfoldCount[app]]);
+            // }
+            for (auto & a : recDefsMu) {
+              Expr tmp = a.first;
+              if (!repled) repled = rewrite(a.first, a.second, appRepled);
+            };
+    
+            for (auto & a : recDefsNu)
+            {
+              if (!repled) repled = rewrite(a.first, a.second, appRepled);
+              usedNu |= repled;
+            }
+            repls[appItr] = appRepled;
+            unfolded = replaceAll(unfolded,repls);
+            appItr = appRepled;
+            */
+            unfolded = replaceAll(unfolded,repls);
+            myprintf("multiple unfold\n");
+            myprintf("  i\n");
+            printf("%d\n", i);
+            myprintf("  appItr\n");
+            myprint(appItr);
+            myprintf("  appRepled\n");
+            myprint(appRepled);
+            myprintf("  unfolded\n");
+            myprint(unfolded);
+          }
+        }
+      }
+      unfolded = normalizeArithm(unfolded);
+
+      myprintf("unfolded\n");
+      myprint(unfolded);
+      return unfolded;
+    }
 
     ExprSet simplify_conj(ExprSet es)
     {
       for (auto it = es.begin(); it != es.end();++it) {
-	for (auto it2 = es.begin(); it2 != es.end();) {
-	  myprintf("checking subsumption\n");
-	  Expr tmp1 = *it;
-	  Expr tmp2 = *it2;
-	  myprint(tmp1);
-	  myprint(tmp2);
-	  if (!(*it == *it2) && u.implies(*it, *it2)) {
-	    myprintf("the latter subsumed\n");
-	    it2 = es.erase(it2);
-	  } else {
-	    ++it2;
-	  }
-	};
+        for (auto it2 = es.begin(); it2 != es.end();) {
+          myprintf("checking subsumption\n");
+          Expr tmp1 = *it;
+          Expr tmp2 = *it2;
+          myprint(tmp1);
+          myprint(tmp2);
+          if (!(*it == *it2) && u.implies(*it, *it2)) {
+            myprintf("the latter subsumed\n");
+            it2 = es.erase(it2);
+          } else {
+            ++it2;
+          }
+        };
       };
       myprintconj(es);
       return es;
@@ -756,19 +1030,19 @@ namespace ufo
     ExprSet simplify_disj(ExprSet es)
     {
       for (auto it = es.begin(); it != es.end();++it) {
-	for (auto it2 = es.begin(); it2 != es.end();) {
-	  myprintf("checking subsumption\n");
-	  Expr tmp1 = *it;
-	  Expr tmp2 = *it2;
-	  myprint(tmp1);
-	  myprint(tmp2);
-	  if (!(*it == *it2) && u.implies(*it2, *it)) {
-	    myprintf("the latter subsumed\n");
-	    it2 = es.erase(it2);
-	  } else {
-	    ++it2;
-	  }
-	};
+        for (auto it2 = es.begin(); it2 != es.end();) {
+          myprintf("checking subsumption\n");
+          Expr tmp1 = *it;
+          Expr tmp2 = *it2;
+          myprint(tmp1);
+          myprint(tmp2);
+          if (!(*it == *it2) && u.implies(*it2, *it)) {
+            myprintf("the latter subsumed\n");
+            it2 = es.erase(it2);
+          } else {
+            ++it2;
+          }
+        };
       };
       return es;
     }
@@ -788,11 +1062,11 @@ namespace ufo
 
       filter (flaRel, bind::IsConst (), inserter(freevars, freevars.begin()));
       for (auto it = freevars.begin(); it != freevars.end();++it) {
-	Expr tmp = *it;
-	Expr tmp0 = cloneVar(tmp, mkTerm<std::string> (lexical_cast<string>(tmp)+"_tmp", efac));
-	freevars0.push_back(tmp0);
-	renaming[tmp] = tmp0;
-	renaming_inv[tmp0] = tmp;
+        Expr tmp = *it;
+        Expr tmp0 = cloneVar(tmp, mkTerm<std::string> (lexical_cast<string>(tmp)+"_tmp", efac));
+        freevars0.push_back(tmp0);
+        renaming[tmp] = tmp0;
+        renaming_inv[tmp0] = tmp;
       };
       Expr flaOrigRenamed = replaceAll(flaOrig, renaming);
       Expr flaRelRenamed = replaceAll(flaRel, renaming);
@@ -803,7 +1077,7 @@ namespace ufo
       getDisj(flaOrigRenamed, flaOrigDisj);
       fla = normalizeArithm(fla);
 
-      fla = unfold(fla);
+      fla = flex_unfold(fla);
       fla = expandExists(fla);
       fla = simplifyExists(fla);
       //fla = expandConjSubexpr(fla);
@@ -830,10 +1104,10 @@ namespace ufo
       {
         if (!isOpX<FAPP>(*it))
           {
-	    constrdisj.insert(*it);
-	    it = flaOrigDisj.erase(it);
+            constrdisj.insert(*it);
+            it = flaOrigDisj.erase(it);
           }
-	else ++it;
+        else ++it;
       }
       Expr constr = disjoin(constrdisj,efac);
       myprintf("constraints filtered\n");
@@ -842,17 +1116,17 @@ namespace ufo
       for (auto b = flaUpdConj.begin(); b!=flaUpdConj.end(); ++b)
       {
         ExprMap forallMatching;
-	ExprEqs eqs;
+        ExprEqs eqs;
         bool foundall = true;
-	//ExprSet usedOrig;
-	ExprSet usedUpd{};
+        //ExprSet usedOrig;
+        ExprSet usedUpd{};
         ExprSet flaUpdDisj;
         getDisj(*b, flaUpdDisj);
         for (auto it = flaOrigDisj.begin(); it != flaOrigDisj.end();)
         {
           if (!isOpX<FAPP>(*it))
           {
-	    return false;
+            return false;
           }
           hasFapps = true;
           ExprVector av;
@@ -862,62 +1136,62 @@ namespace ufo
           bool found = false;
           for (auto it2 = flaUpdDisj.begin(); it2 != flaUpdDisj.end();)
           {
-	    //myprintf("flaUpdDisj \n");
-	    //myprintdisj(flaUpdDisj);
+            //myprintf("flaUpdDisj \n");
+            //myprintdisj(flaUpdDisj);
             if (!isOpX<FAPP>(*it2))
             {
               ++it2;
               continue;
             }
             Expr d = normalizeArithm(*it2);
-	    myprintf("comparing \n");
-	    myprint(a);
-	    myprintf("and \n");
-	    myprint(d);
+            myprintf("comparing \n");
+            myprint(a);
+            myprintf("and \n");
+            myprint(d);
             if (findMatchingSubexpr2 (a, d, av, eqs))
             {
-	      myprintf("matching found\n");
+              myprintf("matching found\n");
               int toCont = false;
-	      it2 = flaUpdDisj.erase(it2);
+              it2 = flaUpdDisj.erase(it2);
               found = true;
               break;
             }
             ++it2;
           };
-	  //myprint(*it);
-	  ++it;
+          //myprint(*it);
+          ++it;
           if (!found )
-	    {foundall=false; break;};
+            {foundall=false; break;};
         };
-	if(foundall) {
-  	    myprintf("all matching found\n sovling:\n");
-	    myprint_eqs(eqs);
-	    ExprVector exvars0; // empty
-	    ExprVector exvars1; // empty
-	    bool r = solve_eqs(eqs,freevars0,freevars,exvars0,exvars1,forallMatching);
-	    if(r) {
-	      print_matching(forallMatching);
-	      Expr constr0 = replaceAll(constr, forallMatching);
-	      Expr constr1 = replaceAll(disjoin(flaUpdDisj,efac), forallMatching);
-	      if(u.implies(constr0,constr1)) {
-		simplified = true;
-		myprintf("before substitution\n");
-		myprint(flaRel);
-		Expr upd = replaceAll(flaRelRenamed, forallMatching);
-		//Expr tmp = conjoin(updConj, efac);
-		flaUpdDisj.insert(upd);
-		transformed.insert(replaceAll(disjoin(flaUpdDisj, efac), renaming_inv));
-	      } else {
-		myprintf("failed to fold: remaining constraints are inconsistent\n");
-		transformed.insert(*b); // failed to fold
-	      }
-	    }
-	    else {
-     		transformed.insert(*b); // failed to fold
-	    }
-	} else {
-	  transformed.insert(*b);
-	};
+        if(foundall) {
+              myprintf("all matching found\n sovling:\n");
+            myprint_eqs(eqs);
+            ExprVector exvars0; // empty
+            ExprVector exvars1; // empty
+            bool r = solve_eqs(eqs,freevars0,freevars,exvars0,exvars1,forallMatching);
+            if(r) {
+              print_matching(forallMatching);
+              Expr constr0 = replaceAll(constr, forallMatching);
+              Expr constr1 = replaceAll(disjoin(flaUpdDisj,efac), forallMatching);
+              if(u.implies(constr0,constr1)) {
+                simplified = true;
+                myprintf("before substitution\n");
+                myprint(flaRel);
+                Expr upd = replaceAll(flaRelRenamed, forallMatching);
+                //Expr tmp = conjoin(updConj, efac);
+                flaUpdDisj.insert(upd);
+                transformed.insert(replaceAll(disjoin(flaUpdDisj, efac), renaming_inv));
+              } else {
+                myprintf("failed to fold: remaining constraints are inconsistent\n");
+                transformed.insert(*b); // failed to fold
+              }
+            }
+            else {
+                     transformed.insert(*b); // failed to fold
+            }
+        } else {
+          transformed.insert(*b);
+        };
       };
       myprintf("step 4\n");
       //myprintdisj(flaOrigDisj);
@@ -928,11 +1202,11 @@ namespace ufo
       transformed = simplify_conj(transformed);
       myprintf("simplified conjunction\n");
       if(simplified) {
-	//fla = normalizeArithm(replaceAll(flaForall, flaForall->last(),
-	//				       mk<EQ>(flaOrig->left(), conjoin(transformed,efac))));
-	add_definition(flaRel, conjoin(transformed, efac), usedNu);
-	//printall();
-	return true;
+        //fla = normalizeArithm(replaceAll(flaForall, flaForall->last(),
+        //                                       mk<EQ>(flaOrig->left(), conjoin(transformed,efac))));
+        add_definition(flaRel, conjoin(transformed, efac), usedNu);
+        //printall();
+        return true;
       } else return false;
     };
 
@@ -947,7 +1221,7 @@ namespace ufo
       ExprSet flaApps;
       filter (fla, bind::IsFApp (), inserter(flaApps, flaApps.begin()));
       ExprMap allRepls;
-      fla = unfold(fla);
+      fla = flex_unfold(fla);
       fla = expandExists(fla);
       fla = simplifyExists(fla);
       fla = expandConjSubexpr(fla);
@@ -973,25 +1247,25 @@ namespace ufo
       {
         if (!isOpX<FAPP>(*it))
           {
-	    constrconj.insert(*it);
-	    it = flaOrigConj.erase(it);
+            constrconj.insert(*it);
+            it = flaOrigConj.erase(it);
           }
-	else ++it;
+        else ++it;
       }
       Expr constr = conjoin(constrconj,efac);
       for (auto b = flaUpdDisj.begin(); b!=flaUpdDisj.end();)
       {
         ExprMap forallMatching;
         bool foundall = true;
-	//ExprSet usedOrig;
-	ExprSet usedUpd{};
+        //ExprSet usedOrig;
+        ExprSet usedUpd{};
         ExprSet flaUpdConj;
         getConj(*b, flaUpdConj);
         for (auto it = flaOrigConj.begin(); it != flaOrigConj.end();)
         {
           if (!isOpX<FAPP>(*it))
           {
-	    return false;
+            return false;
           }
           hasFapps = true;
           ExprVector av;
@@ -1001,8 +1275,8 @@ namespace ufo
           bool found = false;
           for (auto it2 = flaUpdConj.begin(); it2 != flaUpdConj.end();)
           {
-	    //myprintf("flaUpdDisj \n");
-	    //myprintdisj(flaUpdDisj);
+            //myprintf("flaUpdDisj \n");
+            //myprintdisj(flaUpdDisj);
             if (!isOpX<FAPP>(*it2))
             {
               ++it2;
@@ -1010,13 +1284,13 @@ namespace ufo
             }
             Expr d = normalizeArithm(*it2);
             ExprMap matching1;
-	    myprintf("comparing \n");
-	    myprint(a);
-	    myprintf("and \n");
-	    myprint(d);
+            myprintf("comparing \n");
+            myprint(a);
+            myprintf("and \n");
+            myprint(d);
             if (findMatchingSubexpr (a, d, av, matching1))
             {
-	      myprintf("matching found\n");
+              myprintf("matching found\n");
               int toCont = false;
               for (auto & m : matching1)
               {
@@ -1038,60 +1312,60 @@ namespace ufo
               }
               if (toCont)
               {
-  	        myprintf("matching rejected\n");
+                  myprintf("matching rejected\n");
                 ++it2;
                 continue;
               }
 
               usedUpd.insert(*it2);
               //used.insert(*it2);
-	      it2 = flaUpdConj.erase(it2);
+              it2 = flaUpdConj.erase(it2);
               found = true;
               break;
             }
             ++it2;
           };
-	  //myprint(*it);
-	  ++it;
+          //myprint(*it);
+          ++it;
           if (!found )
-	    {foundall=false; break;};
-	  //else {
-  	    //myprintf("!!!1\n");
+            {foundall=false; break;};
+          //else {
+              //myprintf("!!!1\n");
             //usedOrig.insert(*it);
-  	    //myprintf("!!!2\n");
+              //myprintf("!!!2\n");
           //};
         };
-	Expr constrUpd = replaceAll(constr, forallMatching);
-	if(foundall && u.implies(conjoin(flaUpdConj,efac),constrUpd)) {
-	  // sanity check of matching
-	  myprintf("sanity check\n");
-	  Expr tmp1 = conjoin(usedUpd, efac);
-	  myprint(tmp1);
-	  Expr tmp2 = replaceAll(conjoin(flaOrigConj,efac), forallMatching);
-	  myprint(tmp2);
-  	  if(!u.isEquiv(tmp1, tmp2))
-	     return false;
-	  myprintf("matched\n");
-	  simplified = true;
-	  Expr upd = replaceAll(flaRel, forallMatching);
-	  flaUpdConj.insert(upd);
-	  Expr tmp = conjoin(flaUpdConj,efac);
-	  transformed.insert(tmp);
-	  //myprint(tmp);
-	  //myprintf("accumulated\n");
-	  //myprintconj(transformed);
-	}
-	else {
-	  myprintf("not matched\n");
-	  Expr tmp = *b;
-	  if(!u.implies(unfold(tmp), mk<FALSE>(efac))) {
-	    transformed.insert(tmp);
-	  };
-	  myprint(tmp);
-	  myprintf("accumulated\n");
-	  myprintconj(transformed);
-	};
-	++b;
+        Expr constrUpd = replaceAll(constr, forallMatching);
+        if(foundall && u.implies(conjoin(flaUpdConj,efac),constrUpd)) {
+          // sanity check of matching
+          myprintf("sanity check\n");
+          Expr tmp1 = conjoin(usedUpd, efac);
+          myprint(tmp1);
+          Expr tmp2 = replaceAll(conjoin(flaOrigConj,efac), forallMatching);
+          myprint(tmp2);
+            if(!u.isEquiv(tmp1, tmp2))
+             return false;
+          myprintf("matched\n");
+          simplified = true;
+          Expr upd = replaceAll(flaRel, forallMatching);
+          flaUpdConj.insert(upd);
+          Expr tmp = conjoin(flaUpdConj,efac);
+          transformed.insert(tmp);
+          //myprint(tmp);
+          //myprintf("accumulated\n");
+          //myprintconj(transformed);
+        }
+        else {
+          myprintf("not matched\n");
+          Expr tmp = *b;
+          if(!u.implies(flex_unfold(tmp), mk<FALSE>(efac))) {
+            transformed.insert(tmp);
+          };
+          myprint(tmp);
+          myprintf("accumulated\n");
+          myprintconj(transformed);
+        };
+        ++b;
       }
       myprintf("step 4\n");
       //myprintdisj(flaOrigDisj);
@@ -1100,11 +1374,11 @@ namespace ufo
       myprintdisj(transformed);
       transformed = simplify_disj(transformed);
       if(simplified) {
-	//fla = normalizeArithm(replaceAll(flaForall, flaForall->last(),
-	//			       mk<EQ>(flaOrig->left(), disjoin(transformed,efac))));
+        //fla = normalizeArithm(replaceAll(flaForall, flaForall->last(),
+        //                               mk<EQ>(flaOrig->left(), disjoin(transformed,efac))));
         add_definition(flaRel, disjoin(transformed, efac), false);
-	//printall();
-	return true;
+        //printall();
+        return true;
       } else return false;
     };
 
@@ -1119,8 +1393,8 @@ namespace ufo
     bool disjoint_vec(ExprVector av, ExprVector bv)
     {
       for(auto it = av.begin(); it!=av.end(); ++it){
-	for(auto it2 = bv.begin(); it2!=bv.end(); ++it2)
-	  if (*it == *it2) return false;
+        for(auto it2 = bv.begin(); it2!=bv.end(); ++it2)
+          if (*it == *it2) return false;
       }
       return true;
     }
@@ -1128,45 +1402,45 @@ namespace ufo
     bool member_vec(Expr a, ExprVector av)
     {
       for(auto it = av.begin(); it!=av.end(); ++it){
-	  if (*it == a) return true;
+          if (*it == a) return true;
       }
       return false;
     }
     bool solve_eqs(ExprEqs& eqs,ExprVector freevars0,ExprVector freevars,ExprVector exvars0,
-		   ExprVector exvars, ExprMap& forallMatching)
+                   ExprVector exvars, ExprMap& forallMatching)
     {
       ExprVector vars;
       concat(freevars0, exvars, vars);
       myprintvec(vars);
       for(auto it = eqs.begin(); it != eqs.end(); ++it) {
-	bool b = true;
-	ExprPair tmp=*it;
-	myprintf("moving equation for \n");
-	myprint_eq(tmp);
-	ExprPair eq = moveterm(*it, vars, b); // x+a = b+y --> x-y = b-a
-	myprint_eq(eq);
-	if(b) {
-	  *it = eq;
-	} else return false; // failed to move terms
+        bool b = true;
+        ExprPair tmp=*it;
+        myprintf("moving equation for \n");
+        myprint_eq(tmp);
+        ExprPair eq = moveterm(*it, vars, b); // x+a = b+y --> x-y = b-a
+        myprint_eq(eq);
+        if(b) {
+          *it = eq;
+        } else return false; // failed to move terms
       }
       // find equations of the form x=e, and register them in forallMatching
       for(auto it = eqs.begin(); it != eqs.end(); ) {
-	Expr left = it->first;
-	Expr right = normalizeArithm(it->second);
-	myprintf("checking an equation for \n");
-	myprint(left);
-	if(bind::isIntConst(left)) {
-	  it = eqs.erase(it);
-	  if (forallMatching.find(left)!=forallMatching.end()) {
-	    if (forallMatching[left] != NULL && forallMatching[left] != right) {  // inconsistent substitutions
-	      myprintf("inconsistent substitutions found on\n");
-	      myprint(left);
-	      return false;
-	    }
-	  }
- 	  myprintf("registering the equation\n");
-	  forallMatching[left] = right;
-	} else ++it;
+        Expr left = it->first;
+        Expr right = normalizeArithm(it->second);
+        myprintf("checking an equation for \n");
+        myprint(left);
+        if(bind::isIntConst(left)) {
+          it = eqs.erase(it);
+          if (forallMatching.find(left)!=forallMatching.end()) {
+            if (forallMatching[left] != NULL && forallMatching[left] != right) {  // inconsistent substitutions
+              myprintf("inconsistent substitutions found on\n");
+              myprint(left);
+              return false;
+            }
+          }
+           myprintf("registering the equation\n");
+          forallMatching[left] = right;
+        } else ++it;
       };
       // try to solve the remaining equations (of the form a(x1,..xk) = e)
       //ExprMap tmpmap=forallMatching;
@@ -1174,40 +1448,43 @@ namespace ufo
       print_matching(forallMatching);
       bool b=true;
       for(auto it = eqs.begin(); it != eqs.end(); ){
-	Expr left = replaceAll(it->first, forallMatching);
-	Expr right = it->second;
-	myprintf("solving an equation \n");
-	myprint(left);
-	myprintf("==\n");
-	myprint(right);
-	ExprPair ep = moveterm(make_pair(left,right), vars, b);
-	myprintf("after moveterm:\n");
-	myprint_eq(ep);
-	left = normalizeArithm(ep.first);
-	right = ep.second;
+        Expr left = replaceAll(it->first, forallMatching);
+        Expr right = it->second;
+        myprintf("solving an equation \n");
+        myprint(left);
+        myprintf("==\n");
+        myprint(right);
+        ExprPair ep = moveterm(make_pair(left,right), vars, b);
+        myprintf("after moveterm:\n");
+        myprint_eq(ep);
+        left = normalizeArithm(ep.first);
+        right = ep.second;
         ExprVector av;
-	it = eqs.erase(it);
+        it = eqs.erase(it);
         filter (left, bind::IsConst (), inserter(av, av.begin()));
-	if(av.empty()) { // there are no variables that can be instantiated; so the equation must be true
-	  if(!u.implies(mk<TRUE>(efac), mk<EQ>(left,right))) return false;
-	} else {
-	  Expr x = av[0]; // pick a variable
-	  myprintf("picked the variable\n");
-	  myprint(x);
-	  av.erase(av.begin()+1, av.end());
-	  ExprPair neweq = moveterm(make_pair(left,right), av, b);
-	  if(!b) return false;
-	  myprintf("registering the substitution\n");
-	  Expr tmp1 = neweq.first;
-	  Expr tmp2 = neweq.second;
-	  myprintf("before normalization\n");
-	  myprint(tmp2);
-	  tmp2 = normalizeArithm(tmp2);
-	  myprint(tmp1);
-	  myprintf("-->\n");
-	  myprint(tmp2);
-	  register_newmap(forallMatching, tmp1, tmp2);
-	}
+        if(av.empty()) { // there are no variables that can be instantiated; so the equation must be true
+          if(!u.implies(mk<TRUE>(efac), mk<EQ>(left,right))){
+            myprintf("here\n");
+            return false;
+          }
+        } else {
+          Expr x = av[0]; // pick a variable
+          myprintf("picked the variable\n");
+          myprint(x);
+          av.erase(av.begin()+1, av.end());
+          ExprPair neweq = moveterm(make_pair(left,right), av, b);
+          if(!b) return false;
+          myprintf("registering the substitution\n");
+          Expr tmp1 = neweq.first;
+          Expr tmp2 = neweq.second;
+          myprintf("before normalization\n");
+          myprint(tmp2);
+          tmp2 = normalizeArithm(tmp2);
+          myprint(tmp1);
+          myprintf("-->\n");
+          myprint(tmp2);
+          register_newmap(forallMatching, tmp1, tmp2);
+        }
       };
       //for (auto & m: tmpmap) {
       // f(m.first !=NULL && m.second !=NULL) {
@@ -1221,20 +1498,21 @@ namespace ufo
       myprintf("existential\n");
       myprintvec(exvars0);
       for (auto & m: forallMatching) {
-	if(m.first !=NULL && m.second !=NULL) {
-	  Expr x = m.first;
-	  Expr v = m.second;
-	  ExprVector bv;
-	  myprint(x);
-	  bool b = member_vec(x, freevars0);
-	  if(b) {
-	    filter(v, bind::IsConst(), inserter(bv, bv.begin()));
-	    myprintf("variables:\n");
-	    myprintvec(bv);
-	    if(!disjoint_vec(bv, exvars0)) return false;
-	  } else {myprintf("not a free variable\n");}
-	}
-      }	
+        if(m.first !=NULL && m.second !=NULL) {
+          Expr x = m.first;
+          Expr v = m.second;
+          ExprVector bv;
+          myprintf("forall matching\n");
+          myprint(x);
+          bool b = member_vec(x, freevars0);
+          if(b) {
+            filter(v, bind::IsConst(), inserter(bv, bv.begin()));
+            myprintf("variables:\n");
+            myprintvec(bv);
+            if(!disjoint_vec(bv, exvars0)) return false;
+          } else {myprintf("not a free variable\n");}
+        }
+      }        
       return true;
     }
     
@@ -1246,126 +1524,126 @@ namespace ufo
       if (bind::typeOf(pattern) != bind::typeOf(exp)) return false;
 
       if (isOpX<FAPP>(exp) && isOpX<FAPP>(pattern) && pattern->left() == exp->left()) {
-	// for now, we consider only arithmetic expressions as the arguments of predicates
-	  for (int i = 1; i < pattern->arity(); i++) 
-	    {
-	      eqs.push_back(make_pair(pattern->arg(i),exp->arg(i)));
-	    };
-	return true;
+        // for now, we consider only arithmetic expressions as the arguments of predicates
+          for (int i = 1; i < pattern->arity(); i++) 
+            {
+              eqs.push_back(make_pair(pattern->arg(i),exp->arg(i)));
+            };
+        return true;
       };
       return false;
     }
     Expr foldexists(Expr e, Expr origRel, ExprSet origConj, Expr constr,
-		    ExprEqs constreqs, ExprVector exvars, ExprVector exvars0,
-		    ExprVector freevars, ExprVector freevars0, bool& found)
+                    ExprEqs constreqs, ExprVector exvars, ExprVector exvars0,
+                    ExprVector freevars, ExprVector freevars0, bool& found)
     {
       ExprSet conj;
       ExprSet transformed1;
       ExprVector vars;
       for (auto it = freevars0.begin(); it != freevars0.end(); ++it) {
-	  vars.push_back(*it);
+          vars.push_back(*it);
       };
       for (auto it = exvars0.begin(); it != exvars0.end(); ++it) {
-	  vars.push_back(*it);
+          vars.push_back(*it);
       };
       getConj(e, conj);
       for(auto it = conj.begin(); it != conj.end(); ++it) {
-	// recursively apply foldexists
-	Expr tmp = *it;
-	if (isOpX<EXISTS>(tmp)) {
-	  ExprVector exvars1;
-	  for (int i = 0; i < tmp->arity() - 1; i++)
-	    exvars1.push_back(bind::fapp(tmp->arg(i)));
-	  Expr r = foldexists(tmp->last(), origRel, origConj, constr, constreqs, exvars1, exvars0, freevars, freevars0, found);
-	  //ExprVector args = tmp->args;
-	  //args[tmp->arity()-1] = r;
-	  tmp = simplifyExists(replaceAll(tmp, tmp->last(), r));
-	  // after simplification, conjunctions may occur at top-level
-	  ExprSet conjtmp;
-	  getConj(tmp, conjtmp);
-	  for (auto it1 = conjtmp.begin(); it1 != conjtmp.end(); ++it1) {
-	    transformed1.insert(*it1);
-	  }
-	} else {
-	  transformed1.insert(tmp);
-	}
+        // recursively apply foldexists
+        Expr tmp = *it;
+        if (isOpX<EXISTS>(tmp)) {
+          ExprVector exvars1;
+          for (int i = 0; i < tmp->arity() - 1; i++)
+            exvars1.push_back(bind::fapp(tmp->arg(i)));
+          Expr r = foldexists(tmp->last(), origRel, origConj, constr, constreqs, exvars1, exvars0, freevars, freevars0, found);
+          //ExprVector args = tmp->args;
+          //args[tmp->arity()-1] = r;
+          tmp = simplifyExists(replaceAll(tmp, tmp->last(), r));
+          // after simplification, conjunctions may occur at top-level
+          ExprSet conjtmp;
+          getConj(tmp, conjtmp);
+          for (auto it1 = conjtmp.begin(); it1 != conjtmp.end(); ++it1) {
+            transformed1.insert(*it1);
+          }
+        } else {
+          transformed1.insert(tmp);
+        }
       };
       myprintf("folding exists: second step\n");
       myprintconj(origConj);
       myprintconj(transformed1);
       ExprSet transformed2;
       for(auto it = transformed1.begin(); it != transformed1.end(); ++it) {
-	Expr tmp = *it;
-	ExprEqs eqs;
-	ExprMap forallMatching;
-	bool foundall = true;
-	if (isOpX<EXISTS>(tmp)) {
-	  ExprVector exvars1;
-	  for (int i = 0; i < tmp->arity() - 1; i++)
-	    exvars1.push_back(bind::fapp(tmp->arg(i)));
-	  ExprSet updConj;
-	  getConj(tmp->last(), updConj);
+        Expr tmp = *it;
+        ExprEqs eqs;
+        ExprMap forallMatching;
+        bool foundall = true;
+        if (isOpX<EXISTS>(tmp)) {
+          ExprVector exvars1;
+          for (int i = 0; i < tmp->arity() - 1; i++)
+            exvars1.push_back(bind::fapp(tmp->arg(i)));
+          ExprSet updConj;
+          getConj(tmp->last(), updConj);
           for (auto it1 = origConj.begin(); it1 != origConj.end();) {
-	    Expr a = normalizeArithm(replaceAll(*it1, forallMatching));
-	    bool foundlocal = false;
-	    for (auto it2 = updConj.begin(); it2 != updConj.end();) {
-	      if (!isOpX<FAPP>(*it2)) {
-		++it2;
-	      } else {
-		Expr d = normalizeArithm(*it2);
-		ExprMap matching1;
-		if (findMatchingSubexpr2(a, d, vars, eqs)) {
-		  myprintf("matching found\n");
-		  it2 = updConj.erase(it2);
-		  foundlocal = true;
-		  break;
-		};
-		++it2;
-	      };
-	    };
-	    ++it1;
-	    if(!foundlocal)
-	      {foundall = false; break;};
-	  };
-	  if(foundall) {
-	    myprintf("all matching found\n");
-	    myprint_eqs(eqs);
-	    myprintf("solving\n");
-	    print_matching(forallMatching);
-	    //forallMatching.clear();
-	    for (auto it = constreqs.begin(); it!=constreqs.end(); ++it) {
-	      eqs.push_back(*it);
-	    };
-	    bool r = solve_eqs(eqs,freevars0,freevars,exvars0,exvars1,forallMatching);
+            Expr a = normalizeArithm(replaceAll(*it1, forallMatching));
+            bool foundlocal = false;
+            for (auto it2 = updConj.begin(); it2 != updConj.end();) {
+              if (!isOpX<FAPP>(*it2)) {
+                ++it2;
+              } else {
+                Expr d = normalizeArithm(*it2);
+                ExprMap matching1;
+                if (findMatchingSubexpr2(a, d, vars, eqs)) {
+                  myprintf("matching found\n");
+                  it2 = updConj.erase(it2);
+                  foundlocal = true;
+                  break;
+                };
+                ++it2;
+              };
+            };
+            ++it1;
+            if(!foundlocal)
+              {foundall = false; break;};
+          };
+          if(foundall) {
+            myprintf("all matching found\n");
             myprint_eqs(eqs);
-	    if(r) {
-	      print_matching(forallMatching);
-	      Expr constr0 = replaceAll(constr, forallMatching);
-	      Expr constr1 = replaceAll(conjoin(updConj,efac), forallMatching);
-	      if(u.implies(constr1, constr0)) {
-		found = true;
-		myprintf("before substitution\n");
-		myprint(origRel);
-		Expr upd = replaceAll(origRel, forallMatching);
-		updConj.insert(upd);
-		//Expr tmp = conjoin(updConj, efac);
-		transformed2.insert(upd);
-		myprintf("folded formula\n");
-		myprint(tmp);
-		myprintf("-->\n");
-		myprint(upd);
-	      } else {
-		myprintf("failed to fold: remaining constraints are inconsistent\n");
-		transformed2.insert(*it); // failed to fold
-	      }
-	    } else transformed2.insert(*it); // failed to fold
-	  } else {
-	    transformed2.insert(*it); // failed to fold
-	  }
-	}
-	else {
-	  transformed2.insert(*it);
-	}
+            myprintf("solving\n");
+            print_matching(forallMatching);
+            //forallMatching.clear();
+            for (auto it = constreqs.begin(); it!=constreqs.end(); ++it) {
+              eqs.push_back(*it);
+            };
+            bool r = solve_eqs(eqs,freevars0,freevars,exvars0,exvars1,forallMatching);
+            myprint_eqs(eqs);
+            if(r) {
+              print_matching(forallMatching);
+              Expr constr0 = replaceAll(constr, forallMatching);
+              Expr constr1 = replaceAll(conjoin(updConj,efac), forallMatching);
+              if(u.implies(constr1, constr0)) {
+                found = true;
+                myprintf("before substitution\n");
+                myprint(origRel);
+                Expr upd = replaceAll(origRel, forallMatching);
+                updConj.insert(upd);
+                //Expr tmp = conjoin(updConj, efac);
+                transformed2.insert(upd);
+                myprintf("folded formula\n");
+                myprint(tmp);
+                myprintf("-->\n");
+                myprint(upd);
+              } else {
+                myprintf("failed to fold: remaining constraints are inconsistent\n");
+                transformed2.insert(*it); // failed to fold
+              }
+            } else transformed2.insert(*it); // failed to fold
+          } else {
+            transformed2.insert(*it); // failed to fold
+          }
+        }
+        else {
+          transformed2.insert(*it);
+        }
       }
       return conjoin(transformed2, efac);
     }
@@ -1382,9 +1660,9 @@ namespace ufo
          exvars.push_back(bind::fapp(flaO->arg(i)));
       ExprVector freevars;
       for (int i = 0; i < flaMain->arity() - 1; i++)
-	// freevars <- free variables in the top goal;
-	// this should be modified if we allow universal quantifiers
-	// flaMain should be replaced with flaRel?
+        // freevars <- free variables in the top goal;
+        // this should be modified if we allow universal quantifiers
+        // flaMain should be replaced with flaRel?
          freevars.push_back(bind::fapp(flaMain->arg(i)));
       //simplification of the original existential formula should be carried out before
       // iter_ex is called.
@@ -1394,7 +1672,7 @@ namespace ufo
       ExprSet flaApps;
       filter (fla, bind::IsFApp (), inserter(flaApps, flaApps.begin()));
       ExprMap allRepls;
-      fla = unfold(fla);
+      fla = flex_unfold(fla);
       fla = expandExists(fla);
       myprintf("expanded\n");
       myprint(fla);
@@ -1414,18 +1692,18 @@ namespace ufo
       ExprMap renaming;
       ExprMap renaming_inv;
       for (auto it = exvars.begin(); it != exvars.end();++it) {
-	Expr tmp = *it;
-	Expr tmp0 = cloneVar(tmp, mkTerm<std::string> (lexical_cast<string>(tmp)+"_tmp", efac));
-	exvars0.push_back(tmp0);
-	renaming[tmp] = tmp0;
-	renaming_inv[tmp0] = tmp;
+        Expr tmp = *it;
+        Expr tmp0 = cloneVar(tmp, mkTerm<std::string> (lexical_cast<string>(tmp)+"_tmp", efac));
+        exvars0.push_back(tmp0);
+        renaming[tmp] = tmp0;
+        renaming_inv[tmp0] = tmp;
       };
       for (auto it = freevars.begin(); it != freevars.end();++it) {
-	Expr tmp = *it;
-	Expr tmp0 = cloneVar(tmp, mkTerm<std::string> (lexical_cast<string>(tmp)+"_tmp", efac));
-	freevars0.push_back(tmp0);
-	renaming[tmp] = tmp0;
-	renaming_inv[tmp0] = tmp;
+        Expr tmp = *it;
+        Expr tmp0 = cloneVar(tmp, mkTerm<std::string> (lexical_cast<string>(tmp)+"_tmp", efac));
+        freevars0.push_back(tmp0);
+        renaming[tmp] = tmp0;
+        renaming_inv[tmp0] = tmp;
       };
       Expr exbodyOrigRenamed = replaceAll(exbodyOrig, renaming);
       Expr flaRelRenamed = replaceAll(flaRel, renaming);
@@ -1454,31 +1732,31 @@ namespace ufo
       {
         if (!isOpX<FAPP>(*it))
           {
-	    Expr tmp = *it;
-	    constrconj.insert(tmp);
-	    if(isOpX<EQ>(tmp)){
-	      Expr left_orig = tmp->left();
-	      Expr right_orig = tmp->right();
-	      Expr left_upd = replaceAll(left_orig, renaming_inv);
-	      Expr right_upd = replaceAll(right_orig, renaming_inv);
-	      ExprPair tmp2 = make_pair(mk<PLUS>(left_orig,right_upd),
-				    mk<PLUS>(right_orig,left_upd));
-	      constreqs.push_back(tmp2);
-	      myprintf("saved equality information for\n");
-	      myprint(tmp);
-	      myprintf("saved equality\n");
-	      myprint_eqs(constreqs);
-	    }
-	    it = flaOrigConj.erase(it);
+            Expr tmp = *it;
+            constrconj.insert(tmp);
+            if(isOpX<EQ>(tmp)){
+              Expr left_orig = tmp->left();
+              Expr right_orig = tmp->right();
+              Expr left_upd = replaceAll(left_orig, renaming_inv);
+              Expr right_upd = replaceAll(right_orig, renaming_inv);
+              ExprPair tmp2 = make_pair(mk<PLUS>(left_orig,right_upd),
+                                    mk<PLUS>(right_orig,left_upd));
+              constreqs.push_back(tmp2);
+              myprintf("saved equality information for\n");
+              myprint(tmp);
+              myprintf("saved equality\n");
+              myprint_eqs(constreqs);
+            }
+            it = flaOrigConj.erase(it);
           }
-	else ++it;
+        else ++it;
       }
       Expr constr = conjoin(constrconj,efac);
       bool found = false;
       for (auto b = flaUpdDisj.begin(); b!=flaUpdDisj.end();++b)
       {
-	Expr tmp =
-	  replaceAll(foldexists(*b, flaRelRenamed, flaOrigConj, constr, constreqs, exvars, exvars0, freevars, freevars0, found), renaming_inv);
+        Expr tmp =
+          replaceAll(foldexists(*b, flaRelRenamed, flaOrigConj, constr, constreqs, exvars, exvars0, freevars, freevars0, found), renaming_inv);
         transformed.insert(tmp);
       };
       if(!found) return false;
@@ -1486,10 +1764,10 @@ namespace ufo
       myprintdisj(transformed);
       transformed = simplify_disj(transformed);
       if(found) {
-	//fla = normalizeArithm(replaceAll(flaForall, flaForall->last(),
-	//			       mk<EQ>(flaOrig->left(), disjoin(transformed,efac))));
-	add_definition(flaRel, disjoin(transformed, efac), false);
-	return true;
+        //fla = normalizeArithm(replaceAll(flaForall, flaForall->last(),
+        //                               mk<EQ>(flaOrig->left(), disjoin(transformed,efac))));
+        add_definition(flaRel, disjoin(transformed, efac), false);
+        return true;
       } else return false;
     };
   
@@ -1499,14 +1777,14 @@ namespace ufo
       flaOrig = simplifyExists(flaOrig);
       if (isOpX<OR>(flaOrig->right())) {
         myprintf("folding or\n");
-	return iter_or();
+        return iter_or();
       } else if (isOpX<AND>(flaOrig->right())) {
         myprintf("folding and\n");
-	return iter_and();
+        return iter_and();
       } else if (isOpX<EXISTS>(flaOrig->right())) {
         myprintf("folding ex\n");
-	  return iter_ex();
-	  //  return iter();
+          return iter_ex();
+          //  return iter();
       } else return false;
     }
 
@@ -1516,21 +1794,21 @@ namespace ufo
       //myprint(e);
       ExprSet es;
       if(isOpX<OR>(e)){
-	getDisj(e, es);
-	return getFVars(es);
+        getDisj(e, es);
+        return getFVars(es);
       } else if(isOpX<AND>(e)){
-	getConj(e, es);
-	return getFVars(es);
+        getConj(e, es);
+        return getFVars(es);
       } else if (isOpX<FORALL>(e) || isOpX<EXISTS>(e)) {
-	es = getFVars(e->last());
-	for (unsigned i=0; i< e->arity()-1; i++){
-	  //myprintf("erasing \n");
-	  Expr tmp = mk<FAPP>(e->arg(i));
-	  myprint(tmp);
-	  es.erase(tmp);
-	}
+        es = getFVars(e->last());
+        for (unsigned i=0; i< e->arity()-1; i++){
+          //myprintf("erasing \n");
+          Expr tmp = mk<FAPP>(e->arg(i));
+          myprint(tmp);
+          es.erase(tmp);
+        }
       } else {
-	filter(e, bind::IsConst (), inserter(es, es.begin()));
+        filter(e, bind::IsConst (), inserter(es, es.begin()));
       };
       return es;
     }
@@ -1539,10 +1817,10 @@ namespace ufo
     {
       ExprSet vars;
       for(auto it = es.begin(); it!=es.end(); ++it) {
-	ExprSet vars1 = getFVars(*it);
-	for(auto it = vars1.begin(); it!=vars1.end(); ++it) {
-	    vars.insert(*it);
-	}
+        ExprSet vars1 = getFVars(*it);
+        for(auto it = vars1.begin(); it!=vars1.end(); ++it) {
+            vars.insert(*it);
+        }
       }
       return vars;
     }
@@ -1568,20 +1846,20 @@ namespace ufo
       myprintf("free variables computed\n");
       myprintset(fvars);
       for(auto it = fvars.begin(); it!=fvars.end(); ++it) {
-	freevars.push_back(*it);
+        freevars.push_back(*it);
       }
       Expr fvar = new_fvar(freevars);
       flaRel = bind::fapp(fvar, freevars);
       bool simplified=false;
       for (int i = 0; i < iters; i++) {
-	simplified = iter_ex();
-	if(simplified) break;
+        simplified = iter_ex();
+        if(simplified) break;
       };
       if(simplified) {
-	fixVars.insert(fixVars.begin()+1, flaRel);
-	return flaRel;
+        fixVars.insert(fixVars.begin()+1, flaRel);
+        return flaRel;
       } else {
-	return flaOrig;
+        return flaOrig;
       }
     }
 
@@ -1596,49 +1874,49 @@ namespace ufo
       getConj(e, conj);
       ExprSet conj2;
       for(auto it = conj.begin(); it!=conj.end(); ++it) {
-	Expr tmp = *it;
-	if(isOpX<EXISTS>(tmp)) {
-	  bool b1 = false;
-	  Expr e1 = fold_ex(*it, iters);
+        Expr tmp = *it;
+        if(isOpX<EXISTS>(tmp)) {
+          bool b1 = false;
+          Expr e1 = fold_ex(*it, iters);
           conj2.insert(e1);
-	}
-	else
-	  conj2.insert(tmp);
+        }
+        else
+          conj2.insert(tmp);
       };
       ExprSet constr;
       // filter out non-applications
       for(auto it = conj2.begin(); it!=conj2.end(); ) {
-	if(!isOpX<FAPP>(*it)) {
-	  constr.insert(*it);
-	  it = conj2.erase(it);
-	}
-	else ++it;
+        if(!isOpX<FAPP>(*it)) {
+          constr.insert(*it);
+          it = conj2.erase(it);
+        }
+        else ++it;
       }
       if (conj2.size()<2) {
-	for(auto it = conj2.begin(); it!=conj2.end();++it ) {
-	  constr.insert(*it);
-	};
-	return conjoin(constr, efac);
-      } else {	
-	flaOrig = conjoin(conj2, efac);
-	fla = flaOrig;
-	myprintf("folding conjunction\n");
-	myprint(flaOrig);
-	ExprVector freevars;
-	filter(fla, bind::IsConst(), inserter(freevars, freevars.begin()));
-	Expr fvar = new_fvar(freevars);
-	flaRel = bind::fapp(fvar, freevars);
-	bool simplified=false;
+        for(auto it = conj2.begin(); it!=conj2.end();++it ) {
+          constr.insert(*it);
+        };
+        return conjoin(constr, efac);
+      } else {        
+        flaOrig = conjoin(conj2, efac);
+        fla = flaOrig;
+        myprintf("folding conjunction\n");
+        myprint(flaOrig);
+        ExprVector freevars;
+        filter(fla, bind::IsConst(), inserter(freevars, freevars.begin()));
+        Expr fvar = new_fvar(freevars);
+        flaRel = bind::fapp(fvar, freevars);
+        bool simplified=false;
         for (int i = 0; i < iters; i++) {
-	  simplified = iter_and();
-	  if(simplified) break;
-	};
-	if(simplified) {
-	  constr.insert(flaRel);
-	  fixVars.insert(fixVars.begin()+1, flaRel);
-	} else {
-	  constr.insert(flaOrig);
-	}
+          simplified = iter_and();
+          if(simplified) break;
+        };
+        if(simplified) {
+          constr.insert(flaRel);
+          fixVars.insert(fixVars.begin()+1, flaRel);
+        } else {
+          constr.insert(flaOrig);
+        }
       };
       Expr tmp = conjoin(constr, efac);
       myprintf("exiting fold_conj\n");
@@ -1658,7 +1936,7 @@ namespace ufo
       fname = fname + std::to_string(name_id);
       ExprVector types;
       for (auto it = vars.begin(); it!=vars.end(); ++it) {
-	types.push_back(bind::typeOf(*it));
+        types.push_back(bind::typeOf(*it));
       };
       types.push_back(mk<BOOL_TY>(efac));
       return bind::fdecl(mkTerm<std::string>(fname, efac), types);
@@ -1675,42 +1953,42 @@ namespace ufo
       getDisj(body, disj);
       ExprSet disj2;
       for(auto it = disj.begin(); it!=disj.end(); ++it) {
-	Expr e = fold_conj(*it, iters);
-	disj2.insert(e);
+        Expr e = fold_conj(*it, iters);
+        disj2.insert(e);
       };
       ExprSet constr;
       // filter out non-applications
       for(auto it = disj2.begin(); it!=disj2.end(); ) {
-	if(!isOpX<FAPP>(*it)) {
-	  constr.insert(*it);
-	  it = disj2.erase(it);
-	}
-	else ++it;
+        if(!isOpX<FAPP>(*it)) {
+          constr.insert(*it);
+          it = disj2.erase(it);
+        }
+        else ++it;
       }
       if (disj2.size()<2) {
-	for(auto it = disj2.begin(); it!=disj2.end();++it ) {
-	  constr.insert(*it);
-	};
-	return disjoin(constr, efac);
-      } else {	
-	flaOrig = disjoin(disj2, efac);
-	fla = flaOrig;
-	ExprVector freevars;
-	filter(fla, bind::IsConst(), inserter(freevars, freevars.begin()));
-	Expr fvar = new_fvar(freevars);
-	flaRel = bind::fapp(fvar, freevars);
-	bool simplified=false;
+        for(auto it = disj2.begin(); it!=disj2.end();++it ) {
+          constr.insert(*it);
+        };
+        return disjoin(constr, efac);
+      } else {        
+        flaOrig = disjoin(disj2, efac);
+        fla = flaOrig;
+        ExprVector freevars;
+        filter(fla, bind::IsConst(), inserter(freevars, freevars.begin()));
+        Expr fvar = new_fvar(freevars);
+        flaRel = bind::fapp(fvar, freevars);
+        bool simplified=false;
         for (int i = 0; i < iters; i++) {
-	  usedNu = false;
-	  simplified = iter_or();
-	  if(simplified) break;
-	};
-	if(simplified) {
-	  constr.insert(flaRel);
-	  fixVars.insert(fixVars.begin()+1, flaRel);
-	} else {
-	  constr.insert(flaOrig);
-	}
+          usedNu = false;
+          simplified = iter_or();
+          if(simplified) break;
+        };
+        if(simplified) {
+          constr.insert(flaRel);
+          fixVars.insert(fixVars.begin()+1, flaRel);
+        } else {
+          constr.insert(flaOrig);
+        }
       };
       return disjoin(constr, efac);
     }
@@ -1724,21 +2002,21 @@ namespace ufo
       string s = str;
       int n;
       while(s.compare(0,7,"Status:")!=0) {
-	fscanf(fp, "%s", str);
-	s = str;
+        fscanf(fp, "%s", str);
+        s = str;
       }
       fscanf(fp, "%s", str);
       s = str;
       if(s.compare(0,7,"INTEGER")!=0){
-	printf("no solution\n"); return;
+        printf("no solution\n"); return;
       };
       while(s.compare(0,6,"Column")!=0) {
-	fscanf(fp, "%s", str);
-	s = str;
+        fscanf(fp, "%s", str);
+        s = str;
       };
       while(s.compare(0,2,"x1")!=0) {
-	fscanf(fp, "%s", str);
-	s = str;
+        fscanf(fp, "%s", str);
+        s = str;
       };
       fscanf(fp, "%s%d", str, &n);
       printf("x1=%d\n",n);
