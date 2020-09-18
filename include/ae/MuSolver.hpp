@@ -921,19 +921,29 @@ namespace ufo
       {
         ExprSet vars;
         filter (eq, bind::IsConst(), inserter(vars,vars.begin()));
+        myprintf("filtered\n");
         for (auto & var : vars) {
           eq = mk<AND>(mk<LT>(mkTerm(mpz_class(0),efac),var), eq);
         }
+        myprintf("eq made\n");
+        myprint(eq);
         EZ3 ez3(efac);
         ZSolver<EZ3> smt(ez3);
         smt.assertExpr(eq);
-        if(smt.solve()) printf("solved\n");
-        ZSolver<EZ3>::Model m = smt.getModel();
-        for (auto & var : vars)
+        if(smt.solve()) 
         {
-          Expr expr = m.eval(var);
-          solved[var] = expr;
-          myprint(expr);
+          printf("solved\n");
+          ZSolver<EZ3>::Model m = smt.getModel();
+          for (auto & var : vars)
+          {
+            Expr expr = m.eval(var);
+            solved[var] = expr;
+            myprint(expr);
+          }
+        }
+        else
+        {
+          printf("not solved\n");
         }
       }
 
