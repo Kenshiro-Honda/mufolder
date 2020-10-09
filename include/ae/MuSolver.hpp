@@ -783,6 +783,8 @@ namespace ufo
         }
         Expr tmp = def.first;
         myprint(tmp);
+        tmp = def.second;
+        myprint(tmp);
         print_matching(constDiffByItr[def.first]);
       }
       for (auto & def : recDefsNu) 
@@ -910,41 +912,49 @@ namespace ufo
       ExprVector simpRes;
       for (auto & eq : elimRes)
       {
-        simpRes.push_back (mk<EQ> (mkTerm(mpz_class(0), efac), normalizeArithm (mk<MINUS> (eq.first,eq.second))));
+        // simpRes.push_back (mk<EQ> (mkTerm(mpz_class(0), efac), normalizeArithm (mk<MINUS> (eq.first,eq.second))));
+        simpRes.push_back (normalizeArithm(mk<EQ>(eq.first,eq.second)));
       }
       myprintf("simp result\n");
       myprintvec(simpRes);
 
       //  call solver
       ExprMap solved;
+      Expr eqConj = mk<TRUE>(efac);
       for (auto & eq : simpRes) 
       {
-        ExprSet vars;
-        filter (eq, bind::IsConst(), inserter(vars,vars.begin()));
-        myprintf("filtered\n");
-        for (auto & var : vars) {
-          eq = mk<AND>(mk<LT>(mkTerm(mpz_class(0),efac),var), eq);
-        }
-        myprintf("eq made\n");
-        myprint(eq);
-        EZ3 ez3(efac);
-        ZSolver<EZ3> smt(ez3);
-        smt.assertExpr(eq);
-        if(smt.solve()) 
+        eqConj = mk<AND>(eqConj,eq);
+      }
+      // ExprSet vars;
+      // filter (eq, bind::IsConst(), inserter(vars,vars.begin()));
+      // myprintf("filtered\n");
+      // for (auto & var : vars) 
+      for (auto & eqVar : eqVars) 
+      {
+        eqConj = mk<AND>(mk<LT>(mkTerm(mpz_class(0),efac),eqVar), eqConj);
+      }
+      myprintf("eq made\n");
+      myprint(eqConj);
+      EZ3 ez3(efac);
+      ZSolver<EZ3> smt(ez3);
+      smt.assertExpr(eqConj);
+      if(smt.solve()) 
+      {
+        printf("solved\n");
+        ZSolver<EZ3>::Model m = smt.getModel();
+        // for (auto & var : vars)
+        for (auto & eqVar : eqVars)
         {
-          printf("solved\n");
-          ZSolver<EZ3>::Model m = smt.getModel();
-          for (auto & var : vars)
-          {
-            Expr expr = m.eval(var);
-            solved[var] = expr;
-            myprint(expr);
-          }
+          Expr expr = m.eval(eqVar);
+          solved[eqVar] = expr;
+          myprint(eqVar);
+          myprint(expr);
         }
-        else
-        {
-          printf("not solved\n");
-        }
+      }
+      else
+      {
+        printf("not solved\n");
+        return unfold(e);
       }
 
       // unfold
@@ -953,11 +963,11 @@ namespace ufo
       {
         ExprMap repls;
         Expr appRepled = app;
+        Expr appItr = app;
+        EZ3 ez3(efac);
+        int count;
         if (unfoldCount.count(app) != 0 && solved.count(unfoldCount[app]) != 0 )
         {
-          Expr appItr = app;
-          EZ3 ez3(efac);
-          int count;
           std::string countStr = ez3.toSmtLib(solved[unfoldCount[app]]);
           try 
           {
@@ -967,46 +977,50 @@ namespace ufo
           {
             std::cout << countStr;
             printf("caught\n");
-            count = 0;
+            count = 1;
           }
-          for (int i = 0; i < count; i++)
-          {
-            repls[appItr] = unfold(appItr);
-            appItr = repls[appItr];
-            /*
-            appRepled = appItr;
-            bool repled = false;
-            // myprint(appRepled);
-            // if (unfoldCount.count(app) != 0 && solved.count(unfoldCount[app]) != 0 )
-            // {
-            //   myprint(unfoldCount[app]);
-            //   myprint(solved[unfoldCount[app]]);
-            // }
-            for (auto & a : recDefsMu) {
-              Expr tmp = a.first;
-              if (!repled) repled = rewrite(a.first, a.second, appRepled);
-            };
+        }
+        else 
+        {
+          count = 1;
+        }
+        for (int i = 0; i < count; i++)
+        {
+          repls[appItr] = unfold(appItr);
+          appItr = repls[appItr];
+          /*
+          appRepled = appItr;
+          bool repled = false;
+          // myprint(appRepled);
+          // if (unfoldCount.count(app) != 0 && solved.count(unfoldCount[app]) != 0 )
+          // {
+          //   myprint(unfoldCount[app]);
+          //   myprint(solved[unfoldCount[app]]);
+          // }
+          for (auto & a : recDefsMu) {
+            Expr tmp = a.first;
+            if (!repled) repled = rewrite(a.first, a.second, appRepled);
+          };
     
-            for (auto & a : recDefsNu)
-            {
-              if (!repled) repled = rewrite(a.first, a.second, appRepled);
-              usedNu |= repled;
-            }
-            repls[appItr] = appRepled;
-            unfolded = replaceAll(unfolded,repls);
-            appItr = appRepled;
-            */
-            unfolded = replaceAll(unfolded,repls);
-            myprintf("multiple unfold\n");
-            myprintf("  i\n");
-            printf("%d\n", i);
-            myprintf("  appItr\n");
-            myprint(appItr);
-            myprintf("  appRepled\n");
-            myprint(appRepled);
-            myprintf("  unfolded\n");
-            myprint(unfolded);
+          for (auto & a : recDefsNu)
+          {
+            if (!repled) repled = rewrite(a.first, a.second, appRepled);
+            usedNu |= repled;
           }
+          repls[appItr] = appRepled;
+          unfolded = replaceAll(unfolded,repls);
+          appItr = appRepled;
+          */
+          unfolded = replaceAll(unfolded,repls);
+          myprintf("multiple unfold\n");
+          myprintf("  i\n");
+          printf("%d\n", i);
+          myprintf("  appItr\n");
+          myprint(appItr);
+          myprintf("  appRepled\n");
+          myprint(appRepled);
+          myprintf("  unfolded\n");
+          myprint(unfolded);
         }
       }
       unfolded = normalizeArithm(unfolded);
