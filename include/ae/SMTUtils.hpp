@@ -336,11 +336,12 @@ namespace ufo
         if (isOpX<LEQ>(e)) outs () << "(<= ";
         if (isOpX<LT>(e)) outs () << "(< ";
         if (isOpX<GT>(e)) outs () << "(> ";
-        if (isOpX<NEQ>(e)) outs () << "(distinct ";
+        if (isOpX<NEQ>(e)) outs () << "(not (= ";
         print(e->left());
         outs () << " ";
         print(e->right());
         outs () << ")";
+        if (isOpX<NEQ>(e)) outs () << ")";
       }
       else if (isOpX<ITE>(e))
       {
