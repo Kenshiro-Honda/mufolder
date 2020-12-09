@@ -139,7 +139,7 @@ namespace ufo
     {
       if (debug) printf("%s", s.c_str());
     }
-    void myprint(Expr & fla)
+    void myprint(const Expr & fla)
     {
       if(debug) {
         u.print(fla);
@@ -698,6 +698,7 @@ namespace ufo
 
       return false;
     };
+
     Expr unfold(Expr e)
     {
       Expr e1;
@@ -731,6 +732,247 @@ namespace ufo
       return e1;
     }
 
+    Expr mkVar(string s) {
+      return bind::intConst(mkTerm<string> (s, efac));
+    }
+    Expr mkInt(int n){
+      return mkTerm(mpz_class(n), efac);
+    }
+
+    bool isEqual(Expr e1, Expr e2)
+    {
+      myprintf("isEqual\n");
+      myprint(e1);
+      myprintf("and\n");
+      myprint(e2);
+      return !u.isSat(mk<NEQ>(e1,e2));
+    }
+
+    bool check_sat(Expr e, vector<int> args)
+    {
+      // myprintf("check sat\n");
+      // myprint(e);
+      ExprVector argExprs;
+      for (int arg : args)
+      {
+        // myprintf(to_string(arg) + " ");
+        argExprs.push_back(mkInt(arg));
+      }
+      ExprMap map;
+      for (int i = 1; i < e->arity(); ++i)
+      {
+        map.insert(make_pair(e->arg(i), argExprs.at(i-1)));
+      }
+      /*
+      Expr target = mk<IMPL>(replaceAll(e,map),mk<FALSE>(efac));
+      myprint(target);
+      if (u.isSat(target))
+        myprintf("sat\n");
+      else 
+        myprintf("unsat\n");
+      myprintf("\n");
+      */
+      return true;
+    }
+
+    Expr lemma_search(Expr e) 
+    {
+      myprintf("lemma search\n");
+      myprint(e);
+      ExprSet flaApps;
+      ExprMap defs;
+      defs.insert(recDefsMu.begin(), recDefsMu.end());
+      defs.insert(recDefsNu.begin(), recDefsNu.end());
+      const Expr undef = mkVar("undef");
+
+      // make pred-unfold map
+      map<Expr,ExprMap> predUnfoldMap;
+      filter (e, bind::IsFApp (), inserter(flaApps, flaApps.begin()));
+      for (auto & app : flaApps)
+      {
+        for (auto & def : defs)
+        {
+          ExprVector vars;
+          ExprMap matching;
+          filter(def.first, bind::IsConst(), inserter(vars,vars.begin()));
+          if (findMatchingSubexpr(def.first, app, vars, matching)) 
+          {
+            Expr replaced;
+            // print_matching(matching);
+            replaced = replaceAll(def.second, matching);
+            ExprVector vars2;
+            ExprMap matching2;
+            filter(app, bind::IsConst(), inserter(vars2, vars2.begin()));
+            if (findMatchingSubexpr(app, replaced, vars2, matching2))
+            {
+              predUnfoldMap.insert(make_pair(app, matching2));
+            }
+          }
+        }
+      }
+
+      Expr confPredUnfolded;
+      Expr refinedPred;
+
+      // get pred with conflicting substitution
+      ExprMap tempSubs;
+      Expr confPred;
+      bool confCheck = false;
+      for (const auto & predUnfold : predUnfoldMap)
+      {
+        myprintf("predUnfold\n");
+        myprint(predUnfold.first);
+        print_matching(predUnfold.second);
+        
+        bool check = true;
+        //  myprintf("match\n");
+        //  print_matching(match);
+        //  myprintf("match printed\n");
+        for (auto & pair : tempSubs)
+        {
+          if (pair.second == NULL) continue;
+          for (const auto & pair_ : predUnfold.second)
+          {
+            if (pair_.second == NULL) continue;
+            myprint(pair.first);
+            myprint(pair_.first);
+            myprint(pair.second);
+            myprint(pair_.second);
+            
+            if (isEqual(pair.first,pair_.first) && !isEqual(pair.second,pair_.second)) 
+            {
+              myprintf("conflict\n");
+              check = false;
+              break;
+            }
+          }
+        }
+        if (check)
+        {
+          tempSubs.insert((predUnfold.second).begin(), (predUnfold.second).end());
+          // myprintf("match(2)\n");
+          // print_matching(match);
+        }
+        else
+        {
+          // conflict
+          if (!confCheck)
+          {
+            confCheck = true;
+            confPred = predUnfold.first;
+            ExprMap tempMap;
+            tempMap.insert((predUnfold.second).begin(), (predUnfold.second).end());
+            confPredUnfolded = replaceAll(predUnfold.first, tempMap);
+          }
+          else myprintf("more than one conflicts\n");
+        }
+      }
+
+      if (!confCheck)
+      {
+        myprintf("no conflict\n");
+        return unfold(e);
+      }
+      // set undef and replace
+      ExprVector vars;
+      filter(confPred, bind::IsConst(), inserter(vars, vars.begin()));
+      ExprVector preUndefs;
+      ExprMap argToUndef;
+      for (auto & var : vars)
+      {
+        bool check = true;
+        for (auto & pair : tempSubs)
+        {
+          if (pair.first == NULL || pair.second == NULL) {
+            continue;
+          }
+          myprint(pair.first);
+          myprint(var);
+          if (pair.first == var)
+          {
+            myprintf("same\n");
+            check = false;
+            break;
+          }
+        }
+        // if var doesnt belong to map as lhs
+        if (check)
+        {
+           preUndefs.push_back(var);
+        }
+      }
+      for (auto & var : preUndefs)
+      {
+        for (int i = 0; i < confPred->arity(); ++i)
+        {
+          if(contains(confPred->arg(i),var))
+          {
+            argToUndef.insert(make_pair(confPred->arg(i),undef));
+          }
+        }
+      }
+      refinedPred = replaceAll(confPred, argToUndef);
+      refinedPred = replaceAll(refinedPred, tempSubs);
+
+      // 
+      myprintf("pred1\n");
+      myprint(confPredUnfolded);
+      myprintf("pred2\n");
+      myprint(refinedPred);
+      Expr tempDef;
+      for (auto & def : defs)
+      {
+        if (isOpX<FAPP>(refinedPred) && isOpX<FAPP>(def.first))
+        {
+          if (refinedPred->left() == def.first->left())
+          {
+            tempDef = def.first;
+          }
+        }
+        else 
+        {
+          myprintf("something wrong\n");
+          return unfold(e);
+        }
+      }
+      myprintf("tempDef\n");
+      myprint(tempDef);
+      ExprVector newArgs(tempDef->arity());
+      ExprMap newArgsMap;
+      for (int i = 1; i < tempDef->arity(); ++i)
+      {
+        newArgs.at(i) = normalizeArithm(mk<PLUS>(tempDef->arg(i), mk<MINUS>(refinedPred->arg(i),confPredUnfolded->arg(i))));
+        if (contains(newArgs.at(i),undef))
+        {
+          newArgs.at(i) = undef;
+        }
+        myprintf("newArgs("+to_string(i)+")\n");
+        myprint(newArgs.at(i));
+        newArgsMap.insert(make_pair(tempDef->arg(i), newArgs.at(i)));
+      }
+      Expr prevLemma = replaceAll(tempDef,newArgsMap);
+      myprint(prevLemma);
+
+      int arity = tempDef->arity()-1;
+      int thres = 10;
+      vector<int> vec(arity,0);
+      while(vec.at(arity-1) != thres)
+      {
+        check_sat(tempDef,vec);
+        vec.at(0)++;
+        for (int i = 0; i < arity-1; ++i)
+        {
+          if (vec.at(i) == thres)
+          {
+            vec.at(i) = 0;
+            vec.at(i+1)++;
+          }
+        }
+      }
+
+      return unfold(e);
+    }
+
     Expr flex_unfold(Expr e)
     {
       Expr e1;
@@ -743,15 +985,16 @@ namespace ufo
       map<Expr,map<Expr,Expr>> constDiffByItr;
       
       // get diffs for defs
-      for (auto & def : recDefsMu) 
+      ExprMap defs;
+      defs.insert(recDefsMu.begin(), recDefsMu.end());
+      defs.insert(recDefsNu.begin(), recDefsNu.end());
+      for (auto & def : defs) 
       {
         ExprVector vars;
         ExprMap matching;
         filter (def.first, bind::IsConst(), inserter(vars,vars.begin()));
         if (findMatchingSubexpr(def.first, def.second, vars, matching))
         {
-          ExprVector ev;
-
           for (auto & var : vars)
           {
             Expr minusTerm = mk<MINUS>(matching[var], var);
@@ -781,39 +1024,8 @@ namespace ufo
           }
 
         }
-        Expr tmp = def.first;
-        myprint(tmp);
-        tmp = def.second;
-        myprint(tmp);
-        print_matching(constDiffByItr[def.first]);
-      }
-      for (auto & def : recDefsNu) 
-      {
-        ExprVector vars;
-        ExprMap matching;
-        filter (def.first, bind::IsConst(), inserter(vars,vars.begin()));
-        if (findMatchingSubexpr(def.first, def.second, vars, matching))
-        {
-          ExprVector ev;
-
-          for (auto & var : vars)
-          {
-            Expr minusTerm = mk<MINUS>(matching[var], var);
-            Expr normTerm = normalizeArithm(minusTerm);
-            ExprVector tempVec;
-            filter (normTerm, bind::IsConst(), inserter(tempVec,tempVec.begin()));
-            if (tempVec.size() == 0)
-            {
-              constDiffByItr[def.first][var] = normTerm;
-            } 
-            else 
-            {
-              constDiffByItr[def.first][var] = mkVar("undef");
-            }
-          }
-        }
-        Expr tmp = def.first;
-        myprint(tmp);
+        myprint(def.first);
+        myprint(def.second);
         print_matching(constDiffByItr[def.first]);
       }
       //
@@ -954,7 +1166,7 @@ namespace ufo
       else
       {
         printf("not solved\n");
-        return unfold(e);
+        return lemma_search(e);
       }
 
       // unfold
@@ -1947,13 +2159,7 @@ namespace ufo
       return conjoin(constr, efac);
     }
 
-    Expr mkVar(string s) {
-      return bind::intConst(mkTerm<string> (s, efac));
-    }
-    Expr mkInt(int n){
-      return mkTerm(mpz_class(n), efac);
-    }
-      Expr new_fvar(ExprVector vars)
+    Expr new_fvar(ExprVector vars)
     {
       ++name_id;
       string fname = "FIXV";
